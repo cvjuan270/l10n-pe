@@ -5,7 +5,8 @@
             <field name="inherit_id" ref="stock.view_picking_form" />
             <field name="arch" type="xml">
                <field name="partner_id" position="after">
-                    <field name="account_date" />
+                    <field name="kardex_account_date" />
+                    <field name="l10n_pe_table_12_id" />
                 </field>
             </field>
     </record>
