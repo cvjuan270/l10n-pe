@@ -17,7 +17,11 @@
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[l10n_pe_base](l10n_pe_base/) | 16.0.1.0.1 |  | Extiende lacalazacion peruana l10n_pe
 
 [//]: # (end addons)
 

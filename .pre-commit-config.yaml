@@ -53,7 +53,7 @@ repos:
         args:
           - --addons-dir=.
           - --branch=16.0
-          - --org-name=Juand D. Collado Vasquez
+          - --org-name=Juan D. Collado Vasquez
           - --repo-name=l10n-pe
           - --if-source-changed
           - --keep-source-digest

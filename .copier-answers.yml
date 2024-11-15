@@ -15,13 +15,12 @@ github_enforce_dev_status_compatibility: true
 include_wkhtmltopdf: true
 odoo_test_flavor: Odoo
 odoo_version: 16.0
-org_name: Juand D. Collado Vasquez
-org_slug: Juand D. Collado Vasquez
+org_name: Juan D. Collado Vasquez
+org_slug: Juan D. Collado Vasquez
 rebel_module_groups: []
-repo_description: ''
+repo_description: ""
 repo_name: Configuracion basica de lacalizacion Peruana
 repo_slug: l10n-pe
 repo_website: https://github.com/cvjuan270/l10n-pe
 use_pyproject_toml: true
 use_ruff: true
-
