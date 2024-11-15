@@ -12,10 +12,11 @@
     # for the full list
     "category": "Accounting/Localization/Inventory",
     # any module necessary for this one to work correctly
-    "depends": ["l10n_pe", "stock"],
+    "depends": ["l10n_pe", "stock", "account"],
     # always loaded
     "data": [
         # 'security/ir.model.access.csv',
+        "views/stock_picking_views.xml"
     ],
     # only loaded in demonstration mode
 }
