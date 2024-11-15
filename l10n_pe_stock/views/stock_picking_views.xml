@@ -2,10 +2,10 @@
     <record id="view_picking_form" model="ir.ui.view">
             <field name="name">stock.picking.form</field>
             <field name="model">stock.picking</field>
-            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="inherit_id" ref="stock.view_picking_form" />
             <field name="arch" type="xml">
                <field name="partner_id" position="after">
-                    <field name="account_date"/>
+                    <field name="account_date" />
                 </field>
             </field>
     </record>
