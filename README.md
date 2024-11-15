@@ -22,6 +22,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [l10n_pe_base](l10n_pe_base/) | 16.0.1.0.1 |  | Extiende lacalazacion peruana l10n_pe
+[l10n_pe_stock](l10n_pe_stock/) | 16.0.1.0.1 |  | Extiende lacalazacion peruana Stock
 
 [//]: # (end addons)
 
