@@ -15,9 +15,9 @@
     "depends": ["l10n_pe"],
     # always loaded
     "data": [
-        'security/ir.model.access.csv',
+        "security/ir.model.access.csv",
         # data
-        'data/l10n_pe.table.12.csv',
+        "data/l10n_pe.table.12.csv",
     ],
     # only loaded in demonstration mode
 }
