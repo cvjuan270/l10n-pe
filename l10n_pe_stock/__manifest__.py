@@ -19,5 +19,5 @@
         "views/stock_picking_views.xml",
         "views/account_move_views.xml",
     ],
-    # only loaded in demonstration mode
+    "post_init_hook": "post_init_hook",
 }

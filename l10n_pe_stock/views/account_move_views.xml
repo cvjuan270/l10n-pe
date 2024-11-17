@@ -7,6 +7,19 @@
                <field name="journal_id" position="after">
                     <field name="kardex_account_date" />
                 </field>
+            <group id="header_right_group" position='inside'>
+                <field name="stock_move_id" invisible="1" />
+                     <label
+                    for="kardex_account_date"
+                    string="Fecha de Kardex"
+                    attrs="{'invisible': [('stock_move_id', '=', False)]}"
+                />
+                    <field
+                    name="kardex_account_date"
+                    nolabel="1"
+                    attrs="{'invisible': [('stock_move_id', '=', False)]}"
+                />
+                </group>
             </field>
     </record>
 
