@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-odoo-16-docker-compose-odoo16-1  | l10n_pe_base.access_l10n_pe_table_12,access_l10n_pe_table_12,l10n_pe_base.model_l10n_pe_table_12,base.group_user,1,0,0,0
+l10n_pe_base.access_l10n_pe_table_12,access_l10n_pe_table_12,l10n_pe_base.model_l10n_pe_table_12,base.group_user,1,0,0,0
+l10n_pe_base.access_l10n_pe_account_period,access_l10n_pe_account_period,l10n_pe_base.model_l10n_pe_account_period,base.group_user,1,1,1,1
+l10n_pe_base.access_wizard_l10n_pe_period_generator,access_wizard_l10n_pe_period_generator,l10n_pe_base.model_wizard_l10n_pe_period_generator,base.group_user,1,1,1,1

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_wizard_period_generator" model="ir.ui.view">
+        <field name="name">wizard.period.generator</field>
+        <field name="model">wizard.l10n_pe.period.generator</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="p-2">
+                    Este formulario permite generar de forma automática los periodos contables para el año fiscal
+                    seleccionado.<br/>
+                </div>
+                <group>
+                    <group>
+                        <field name="account_fiscal_year_id" required="1"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="period_generator" string="Generar" type="object" class="oe_highlight"/>
+                    <button special="cancel" string="Cancelar" class="oe_link"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_wizard_period_generator" model="ir.actions.act_window">
+        <field name="name">Asistente para generar periodos contables[PE]</field>
+        <field name="res_model">wizard.l10n_pe.period.generator</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
