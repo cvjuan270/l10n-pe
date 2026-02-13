@@ -17,7 +17,11 @@ Modulas base para Contabilidad Peruana
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[l10n_pe_analytic_account_target](l10n_pe_analytic_account_target/) | 18.0.1.0.1 |  | permite generar los asientos de destino basados en los apuntes analíticos existentes en un rango de fechas específico. Al confirmar, se procesarán los apuntes analíticos dentro del período seleccionado (fecha de inicio y fecha final) y se aplicarán los porcentajes correspondientes según las normas de reparto establecidas.
 
 [//]: # (end addons)
 
