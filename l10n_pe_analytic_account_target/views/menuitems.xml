@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <menuitem
+        id="menu_analytic_account_target"
+        name="Asientos de Destino"
+        parent="account.menu_analytic_accounting"
+        sequence="10"
+    />
+    <menuitem
+        id="menu_analytic_account_target_wizard"
+        name="Asistente de Asientos de Destino"
+        parent="menu_analytic_account_target"
+        groups="analytic.group_analytic_accounting"
+        action="action_analytic_account_target_wizard"
+        sequence="11"
+    />
+</odoo>

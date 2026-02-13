@@ -1,0 +1,106 @@
+import logging
+
+from odoo import _, fields, models
+from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
+
+
+class AccountAnalyticLine(models.Model):
+    _inherit = "account.analytic.line"
+
+    account_target_id = fields.Many2one(
+        "account.move",
+        string="Asiento contable Destino",
+        readonly=True,
+        copy=False,
+    )
+
+    def unlink(self):
+        for rec in self:
+            if rec.account_target_id:
+                rec.account_target_id.button_draft()
+                rec.account_target_id.button_cancel()
+        return super().unlink()
+
+    def action_create_destination_move(self):
+        self.ensure_one()
+        move_data = self._prepare_destination_move()
+        if move_data:
+            self._create_and_post_move(move_data)
+
+    def _prepare_destination_move(self):
+        self.ensure_one()
+        analytic_account = self.env["account.analytic.account"].browse(
+            self.account_id.id
+        )
+        if (
+            not analytic_account.account_entry_target
+            or self.category not in ("vendor_bill", "other")
+            or self.account_target_id
+        ):
+            return False
+        debit_account = analytic_account.acccount_debit_target
+        credit_account = analytic_account.acccount_credit_target
+        company = self.company_id or self.env.company
+        journal = company.sudo().analytic_account_journal_target_id
+        if not debit_account or not credit_account:
+            raise UserError(
+                _(
+                    "Debe configurar las cuentas de destino de débito y "
+                    "crédito en la cuenta analítica: %s.",
+                    analytic_account.name,
+                )
+            )
+        if not journal:
+            raise UserError(
+                _(
+                    "Debe configurar el diario de destino en la configuración "
+                    "del sistema para la compañía: %s.",
+                    company.name,
+                )
+            )
+
+        move_data = {
+            "origin_move_id": self.move_line_id.move_id.id,
+            "origin_move_line_id": self.move_line_id.id,
+            "origin_analytic_line_id": self.id,
+            "ref": self.move_line_id.display_name or self.name,
+            "date": self.date,
+            "journal_id": journal.id,
+            "company_id": company.id,
+            "currency_id": self.move_line_id.currency_id.id,
+            "move_type": "entry",
+        }
+        line_data = {
+            "origin_move_id": self.move_line_id.move_id.id,
+            "origin_move_line_id": self.move_line_id.id,
+            "name": self.move_line_id.display_name or self.name,
+            "ref": self.ref or "",
+            "partner_id": self.partner_id.id,
+            "currency_id": self.move_line_id.currency_id.id,
+        }
+        debit_data = dict(line_data)
+        credit_data = dict(line_data)
+        debit_data.update(
+            account_id=debit_account.id,
+            debit=self.amount * -1.0,
+            credit=False,
+            amount_currency=(self.amount * -1) * self.move_line_id.currency_rate,
+            currency_id=self.move_line_id.currency_id.id,
+        )
+        credit_data.update(
+            account_id=credit_account.id,
+            debit=False,
+            credit=self.amount * -1.0,
+            amount_currency=self.amount * self.move_line_id.currency_rate,
+            currency_id=self.move_line_id.currency_id.id,
+        )
+
+        move_data["line_ids"] = [(0, 0, debit_data), (0, 0, credit_data)]
+        return move_data
+
+    def _create_and_post_move(self, move_data):
+        account_target = self.env["account.move"].create(move_data)
+        account_target.action_post()
+        self.account_target_id = account_target.id

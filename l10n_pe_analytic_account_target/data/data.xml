@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="journal_analytic_account_target_1" model="account.journal">
+        <field name="name">Diario de asientos de destino</field>
+        <field name="code">DAT</field>
+        <field name="type">general</field>
+        <field name="currency_id" ref="base.PEN" />
+    </record>
+</odoo>
