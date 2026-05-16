@@ -29,13 +29,28 @@ class AccountAnalyticLine(models.Model):
         if move_data:
             self._create_and_post_move(move_data)
 
+    def _get_target_analytic_account(self):
+        """Cuenta analítica con asiento destino configurado.
+
+        Se obtiene desde ``analytic_distribution`` (fuente real) en lugar de
+        ``account_id``, porque en Odoo 18 la cuenta puede vivir en cualquier
+        columna de plan (``account_id`` o ``x_planN_id``) según el plan al
+        que pertenezca. ``analytic_distribution`` la contiene siempre.
+        """
+        self.ensure_one()
+        account_ids = []
+        for key in self.analytic_distribution or {}:
+            account_ids += [int(i) for i in str(key).split(",")]
+        accounts = (
+            self.env["account.analytic.account"].browse(set(account_ids)).exists()
+        )
+        return accounts.filtered("account_entry_target")[:1]
+
     def _prepare_destination_move(self):
         self.ensure_one()
-        analytic_account = self.env["account.analytic.account"].browse(
-            self.account_id.id
-        )
+        analytic_account = self._get_target_analytic_account()
         if (
-            not analytic_account.account_entry_target
+            not analytic_account
             or self.category not in ("vendor_bill", "other")
             or self.account_target_id
         ):
