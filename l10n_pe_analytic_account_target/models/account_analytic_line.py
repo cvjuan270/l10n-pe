@@ -76,6 +76,19 @@ class AccountAnalyticLine(models.Model):
                 )
             )
 
+        # Resolución de moneda y tasa con fallback robusto.
+        currency = self.move_line_id.currency_id or company.currency_id
+        rate = self.move_line_id.currency_rate or 1.0
+
+        # Manejo de signo: trabajamos con la magnitud del importe.
+        # Caso normal (gasto, amount < 0): DEBE = débito, HABER = crédito.
+        # Caso inverso (amount > 0, p.ej. nota de crédito de proveedor /
+        # devolución): se invierte el asiento intercambiando las cuentas.
+        if self.amount > 0:
+            debit_account, credit_account = credit_account, debit_account
+        amount = abs(self.amount)
+        amount_currency = currency.round(amount * rate)
+
         move_data = {
             "origin_move_id": self.move_line_id.move_id.id,
             "origin_move_line_id": self.move_line_id.id,
@@ -84,7 +97,7 @@ class AccountAnalyticLine(models.Model):
             "date": self.date,
             "journal_id": journal.id,
             "company_id": company.id,
-            "currency_id": self.move_line_id.currency_id.id,
+            "currency_id": currency.id,
             "move_type": "entry",
         }
         line_data = {
@@ -93,23 +106,23 @@ class AccountAnalyticLine(models.Model):
             "name": self.move_line_id.display_name or self.name,
             "ref": self.ref or "",
             "partner_id": self.partner_id.id,
-            "currency_id": self.move_line_id.currency_id.id,
+            "currency_id": currency.id,
         }
         debit_data = dict(line_data)
         credit_data = dict(line_data)
         debit_data.update(
             account_id=debit_account.id,
-            debit=self.amount * -1.0,
+            debit=amount,
             credit=False,
-            amount_currency=(self.amount * -1) * self.move_line_id.currency_rate,
-            currency_id=self.move_line_id.currency_id.id,
+            amount_currency=amount_currency,
+            currency_id=currency.id,
         )
         credit_data.update(
             account_id=credit_account.id,
             debit=False,
-            credit=self.amount * -1.0,
-            amount_currency=self.amount * self.move_line_id.currency_rate,
-            currency_id=self.move_line_id.currency_id.id,
+            credit=amount,
+            amount_currency=-amount_currency,
+            currency_id=currency.id,
         )
 
         move_data["line_ids"] = [(0, 0, debit_data), (0, 0, credit_data)]
@@ -117,5 +130,9 @@ class AccountAnalyticLine(models.Model):
 
     def _create_and_post_move(self, move_data):
         account_target = self.env["account.move"].create(move_data)
+        # Limpiamos la distribución analítica de las líneas del asiento destino
+        # para evitar que genere nuevas líneas analíticas reprocesables (mismo
+        # comportamiento que el wizard).
+        account_target.line_ids.write({"analytic_distribution": False})
         account_target.action_post()
         self.account_target_id = account_target.id
