@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Safety net for deferred moves (payments / statements) that are never
+         reconciled and would otherwise stay without a voucher. Disabled by
+         default: enable it (or run the action manually) at period close. -->
+    <record id="ir_cron_backfill_deferred_vouchers" model="ir.cron">
+        <field name="name">Peruvian Voucher: assign CUO to open payments</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="state">code</field>
+        <field name="code">model._l10n_pe_backfill_deferred_vouchers()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">months</field>
+        <field name="active" eval="False" />
+        <field name="nextcall">2026-01-01 00:00:00</field>
+    </record>
+</odoo>

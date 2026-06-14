@@ -86,3 +86,37 @@ docs/_build/
 
 # OCA rules
 !static/lib/
+
+# ========================================
+# Talentix workspace setup: entradas agregadas
+# ========================================
+venv/
+.venv/
+.env/
+*.pyc
+*.pyo
+.idea/
+.vscode/
+.settings/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.odoo-data/
+backups/
+data/filestore/
+Thumbs.db
+*.swo
+logs/
+*.local
+*.secret
+.env.local
+odoo.conf.local
+# ========================================
+# Claude Code / IA Assistant (NO commitear)
+# ========================================
+.claude/
+.talentix-setup-state
+.mcp-pending.md
+.mcp.json
+CLAUDE.local.md
