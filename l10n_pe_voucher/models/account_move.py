@@ -63,11 +63,24 @@ class AccountMove(models.Model):
         resolved = {key for key in keys.values() if key}
         # Lines without their own origin (taxes, payable/receivable, rounding)
         # follow the move's single operation, or fall back to the move itself.
-        fallback = next(iter(resolved)) if len(resolved) == 1 else ("account.move", self.id)
+        fallback = (
+            next(iter(resolved)) if len(resolved) == 1 else ("account.move", self.id)
+        )
         return {line: (key or fallback) for line, key in keys.items()}
 
     def _l10n_pe_assign_vouchers(self):
-        """Assign a voucher to every journal item of the posted moves."""
+        """Assign a voucher to every journal item of the posted moves.
+
+        Bridge modules whose moves are posted *before* the links that resolve
+        their operation are in place (e.g. POS posts the inventory valuation
+        entry before stamping ``pos_order_id``/``pos_session_id`` on the
+        picking) can set ``l10n_pe_skip_voucher_assign`` in the context to skip
+        the eager assignment at ``_post`` and run it themselves once the links
+        are stable, avoiding a throwaway fallback voucher that burns a
+        correlative.
+        """
+        if self.env.context.get("l10n_pe_skip_voucher_assign"):
+            return
         for move in self:
             if move.state != "posted" or move._l10n_pe_voucher_deferred():
                 continue
