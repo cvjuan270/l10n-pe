@@ -4,6 +4,33 @@ from odoo import models
 class AccountMove(models.Model):
     _inherit = "account.move"
 
+    def _l10n_pe_voucher_deferred(self):
+        """Defer the per-method settlement entries of a POS session.
+
+        At session close POS posts a per-payment-method settlement entry (the
+        combined/split ``account.payment`` of each bank/cash method) and the
+        cash statement entry. Their voucher is decided afterwards by
+        ``pos.session._l10n_pe_route_settlement_vouchers`` (one CUO per payment
+        journal), so they must NOT grab a throwaway fallback voucher at their
+        own posting -- that would burn a correlative and leave a gap.
+
+        Identified structurally (no context needed): the settlement payment via
+        ``origin_payment_id.pos_session_id`` and the cash statement via
+        ``statement_line_id.pos_session_id``.
+        """
+        self.ensure_one()
+        payment = self.origin_payment_id
+        if payment and "pos_session_id" in payment._fields and payment.pos_session_id:
+            return True
+        statement_line = self.statement_line_id
+        if (
+            statement_line
+            and "pos_session_id" in statement_line._fields
+            and statement_line.pos_session_id
+        ):
+            return True
+        return super()._l10n_pe_voucher_deferred()
+
     def _l10n_pe_voucher_move_key(self):
         """Resolve the operation of a Point of Sale journal entry.
 
