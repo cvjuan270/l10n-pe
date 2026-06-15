@@ -21,7 +21,7 @@ class PosSession(models.Model):
         burning a fallback correlative.
         """
         res = super(
-            self.with_context(l10n_pe_skip_voucher_assign=True)
+            PosSession, self.with_context(l10n_pe_skip_voucher_assign=True)
         )._validate_session(
             balancing_account=balancing_account,
             amount_to_balance=amount_to_balance,

@@ -15,7 +15,7 @@ class PosOrder(models.Model):
         assigns it once the links are in place.
         """
         return super(
-            self.with_context(l10n_pe_skip_voucher_assign=True)
+            PosOrder, self.with_context(l10n_pe_skip_voucher_assign=True)
         )._create_order_picking()
 
     def _apply_invoice_payments(self, is_reverse=False):
@@ -29,7 +29,7 @@ class PosOrder(models.Model):
         so we assign the payment entries right away.
         """
         payment_moves = super(
-            self.with_context(l10n_pe_skip_voucher_assign=True)
+            PosOrder, self.with_context(l10n_pe_skip_voucher_assign=True)
         )._apply_invoice_payments(is_reverse=is_reverse)
         closed = self.filtered(lambda order: order.session_id.state == "closed")
         if closed and payment_moves:
