@@ -58,12 +58,35 @@ class TestVoucherPos(TestPoSCommon):
 
         self._close_session(session)
 
-        # Session closing entry -> grouped under the pos.session voucher.
+        # Session closing entry: the sales/IGV/cost summary lines are grouped
+        # under the single pos.session voucher, while the cash settlement lines
+        # get a per-payment-journal voucher (one CUO per journal, never mixing
+        # payment methods).
         self.assertTrue(session.move_id, "session has a closing entry")
-        sess_voucher = session.move_id.line_ids.l10n_pe_voucher_id
-        self.assertEqual(len(sess_voucher), 1, "single voucher on the session entry")
-        self.assertEqual(sess_voucher.l10n_pe_origin_model, "pos.session")
-        self.assertEqual(sess_voucher.l10n_pe_origin_res_id, session.id)
+        vouchers = session.move_id.line_ids.l10n_pe_voucher_id
+        origins = vouchers.mapped("l10n_pe_origin_model")
+        sess_voucher = vouchers.filtered(
+            lambda v: v.l10n_pe_origin_model == "pos.session"
+        )
+        self.assertEqual(
+            sess_voucher.l10n_pe_origin_res_id,
+            session.id,
+            "summary lines grouped under the pos.session voucher",
+        )
+        self.assertTrue(
+            any(origin.startswith("pos.session.journal:") for origin in origins),
+            "cash settlement grouped under a per-journal voucher",
+        )
+
+        # No voucher mixes lines settled through two different payment journals.
+        pos_journal = session.move_id.journal_id
+        for voucher in vouchers:
+            journals = voucher.move_line_ids.mapped(
+                lambda line: line._l10n_pe_pos_settlement_journal(pos_journal)
+            )
+            self.assertLessEqual(
+                len(journals), 1, "a voucher settles at most one payment journal"
+            )
 
         # No posted entry of this session is left without a voucher.
         self.assertFalse(
