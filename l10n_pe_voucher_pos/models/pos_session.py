@@ -59,26 +59,39 @@ class PosSession(models.Model):
 
     def _l10n_pe_route_settlement_vouchers(self):
         """Give the closing entry and the settlement entries one voucher per
-        payment journal (Efectivo, Yape/banco, ...). Lines not tied to a
-        settlement (sales, IGV, cost summary of the day) stay on the single
-        pos.session voucher."""
+        payment journal (Efectivo, Yape/banco, ...), so each payment journal's
+        liquidation and its closing-entry counterpart share a single CUO. Lines
+        not tied to a settlement (sales, IGV, cost summary of the day) stay on
+        the single pos.session voucher.
+
+        This is authoritative: settlement entries (cash statement, bank payment)
+        get a throwaway fallback voucher at their own posting that the wrapping
+        ``l10n_pe_skip_voucher_assign`` context does not always reach, so we
+        re-point every line to its journal voucher even when it already carries
+        one, and drop the vouchers left empty by the move.
+        """
         self.ensure_one()
         Voucher = self.env["l10n.pe.voucher"]
         pos_journal = self.move_id.journal_id
         moves = self.move_id | self._l10n_pe_settlement_moves()
+        displaced = Voucher
         for line in moves.line_ids:
-            if line.l10n_pe_voucher_id:
-                continue
             journal = line._l10n_pe_pos_settlement_journal(pos_journal)
             if journal:
-                voucher = Voucher._l10n_pe_get_or_create(
+                target = Voucher._l10n_pe_get_or_create(
                     self.company_id, "pos.session.journal:%d" % self.id, journal.id
                 )
             else:
-                voucher = Voucher._l10n_pe_get_or_create(
+                target = Voucher._l10n_pe_get_or_create(
                     self.company_id, "pos.session", self.id
                 )
-            line.l10n_pe_voucher_id = voucher
+            current = line.l10n_pe_voucher_id
+            if current == target:
+                continue
+            if current:
+                displaced |= current
+            line.l10n_pe_voucher_id = target
+        displaced.filtered(lambda voucher: not voucher.move_line_ids).unlink()
 
     def _l10n_pe_session_moves(self):
         """Every posted journal entry produced by this session: the closing
