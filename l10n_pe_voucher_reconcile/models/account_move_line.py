@@ -30,12 +30,11 @@ class AccountMoveLine(models.Model):
           different operations) the resolution is ambiguous, so each deferred
           move keeps its own voucher;
         * if there is no anchor yet (e.g. a payment matched only with a bank
-          statement, no invoice) the whole component shares a single new voucher.
+          statement, no invoice) the component is left pending -- see below.
 
         Vouchers are only ever created, never deleted, so the gap-less
         correlative is preserved.
         """
-        Move = self.env["account.move"]
         Voucher = self.env["l10n.pe.voucher"]
 
         seeds = self.move_id.filtered(lambda m: m._l10n_pe_voucher_deferred())
@@ -45,20 +44,7 @@ class AccountMoveLine(models.Model):
         if not seeds:
             return
 
-        # Breadth-first walk over the reconciliation graph, collecting only the
-        # deferred moves of the component (the chain payment <-> statement).
-        component = Move
-        seen = Move
-        todo = list(seeds)
-        while todo:
-            move = todo.pop()
-            if move in seen:
-                continue
-            seen |= move
-            component |= move
-            for neighbour in move.line_ids._l10n_pe_reconciled_counterpart_moves():
-                if neighbour._l10n_pe_voucher_deferred() and neighbour not in seen:
-                    todo.append(neighbour)
+        component = seeds._l10n_pe_deferred_component()
 
         pending = component.filtered(
             lambda m: any(not line.l10n_pe_voucher_id for line in m.line_ids)
@@ -87,10 +73,21 @@ class AccountMoveLine(models.Model):
         if len(anchors) == 1:
             target = anchors
         elif not anchors:
-            main = component.sorted("id")[:1]
-            target = Voucher._l10n_pe_get_or_create(
-                main.company_id, "account.move", main.id
-            )
+            # Nothing anchors this component yet (e.g. a payment matched only
+            # with its bank statement line, before the invoice is matched).
+            #
+            # Minting a voucher here would freeze the grouping: assignment only
+            # fills empty lines and vouchers are never deleted, so the component
+            # could no longer adopt the invoice voucher once the document is
+            # reconciled later. The outcome would depend on the order the
+            # accountant happens to reconcile in, and the "statement first" order
+            # would burn a correlative that the "invoice first" order does not.
+            #
+            # Leave the component pending instead. The period-close backfill
+            # (``_l10n_pe_assign_own_component_vouchers``) gives it a single
+            # shared voucher once we know no document will ever anchor it, so a
+            # genuine advance still ends up on one CUO.
+            return
         else:
             # Ambiguous: several operations share this payment; keep each move
             # on its own voucher rather than merging unrelated operations.
