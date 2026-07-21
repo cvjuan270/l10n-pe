@@ -1,6 +1,6 @@
 {
     "name": "Peruvian Accounting Voucher",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "summary": """Groups journal items by voucher (CUO) for the Peruvian
     Journal Book (Libro Diario). Related entries such as the inventory
     valuation move and its invoice share the same voucher number so they

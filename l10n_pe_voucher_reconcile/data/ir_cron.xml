@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<odoo>
+<!-- noupdate: the cron ships disabled and it is up to the customer to
+     activate it (and to tune its schedule). Without this, every module
+     update would silently reset their choice. -->
+<odoo noupdate="1">
     <!-- Safety net for deferred moves (payments / statements) that are never
          reconciled and would otherwise stay without a voucher. Disabled by
          default: enable it (or run the action manually) at period close. -->

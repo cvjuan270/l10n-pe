@@ -75,16 +75,22 @@ class PosSession(models.Model):
         pos_journal = self.move_id.journal_id
         moves = self.move_id | self._l10n_pe_settlement_moves()
         displaced = Voucher
+        # A session close walks hundreds of lines that boil down to a handful of
+        # origins (one per payment journal, plus the session itself), so we
+        # resolve each key once -- same cache the core assignment uses in
+        # ``account.move._l10n_pe_assign_vouchers``.
+        cache = {}
         for line in moves.line_ids:
             journal = line._l10n_pe_pos_settlement_journal(pos_journal)
             if journal:
-                target = Voucher._l10n_pe_get_or_create(
-                    self.company_id, "pos.session.journal:%d" % self.id, journal.id
-                )
+                key = ("pos.session.journal:%d" % self.id, journal.id)
             else:
-                target = Voucher._l10n_pe_get_or_create(
-                    self.company_id, "pos.session", self.id
+                key = ("pos.session", self.id)
+            if key not in cache:
+                cache[key] = Voucher._l10n_pe_get_or_create(
+                    self.company_id, key[0], key[1]
                 )
+            target = cache[key]
             current = line.l10n_pe_voucher_id
             if current == target:
                 continue

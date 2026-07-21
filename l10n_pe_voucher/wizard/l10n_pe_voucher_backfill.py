@@ -1,4 +1,5 @@
 from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class L10nPeVoucherBackfill(models.TransientModel):
@@ -22,10 +23,23 @@ class L10nPeVoucherBackfill(models.TransientModel):
     )
     total_count = fields.Integer(string="To process", readonly=True)
     processed_count = fields.Integer(string="Processed", readonly=True)
-    pending_count = fields.Integer(
-        string="Remaining", compute="_compute_pending_count"
-    )
-    progress = fields.Float(string="Progress", compute="_compute_progress")
+    pending_count = fields.Integer(string="Remaining", compute="_compute_pending_count")
+    progress = fields.Float(compute="_compute_progress")
+
+    @api.constrains("batch_size")
+    def _check_batch_size(self):
+        """Reject non-positive batch sizes.
+
+        ``0`` is falsy, so ``_l10n_pe_backfill_vouchers`` would skip its
+        ``limit`` and process every pending entry in a single step (worker time
+        limit), and a negative value would slice the queue backwards
+        (``ordered[:-N]``), silently skipping the last N moves.
+        """
+        for wizard in self:
+            if wizard.batch_size <= 0:
+                raise ValidationError(
+                    _("The batch size must be a positive number of entries.")
+                )
 
     @api.depends("date_from", "state", "processed_count")
     def _compute_pending_count(self):
@@ -46,13 +60,15 @@ class L10nPeVoucherBackfill(models.TransientModel):
 
     def action_start(self):
         self.ensure_one()
-        self.write({
-            "state": "running",
-            "total_count": len(
-                self.env["account.move"]._l10n_pe_moves_to_backfill(self.date_from)
-            ),
-            "processed_count": 0,
-        })
+        self.write(
+            {
+                "state": "running",
+                "total_count": len(
+                    self.env["account.move"]._l10n_pe_moves_to_backfill(self.date_from)
+                ),
+                "processed_count": 0,
+            }
+        )
         return self._run_batch()
 
     def action_continue(self):
@@ -60,6 +76,12 @@ class L10nPeVoucherBackfill(models.TransientModel):
         return self._run_batch()
 
     def _run_batch(self):
+        # Second line of defence: the constraint only fires on write, while the
+        # wizard may be run from code with a default-less value.
+        if self.batch_size <= 0:
+            raise ValidationError(
+                _("The batch size must be a positive number of entries.")
+            )
         processed = self.env["account.move"]._l10n_pe_backfill_vouchers(
             date_from=self.date_from, limit=self.batch_size
         )

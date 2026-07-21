@@ -6,7 +6,7 @@
     "author": "Tagre.pe,Juan D. Collado Vasquez",
     "website": "https://github.com/cvjuan270/l10n-pe",
     "category": "Accounting/Financials/Localizations",
-    "depends": ["l10n_pe_voucher", "point_of_sale"],
+    "depends": ["account", "l10n_pe_voucher", "point_of_sale"],
     "data": [],
     "price": 0,
     "currency": "USD",
