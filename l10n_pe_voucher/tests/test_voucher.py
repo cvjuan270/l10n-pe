@@ -1,10 +1,12 @@
 from odoo import Command
-from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 from odoo.tests import tagged
+
+from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.l10n_pe_voucher.tests.common import L10nPeVoucherTestMixin
 
 
 @tagged("post_install", "-at_install")
-class TestL10nPeVoucher(AccountTestInvoicingCommon):
+class TestL10nPeVoucher(L10nPeVoucherTestMixin, AccountTestInvoicingCommon):
     """Unit tests for the voucher (CUO) assignment of l10n_pe_voucher."""
 
     @classmethod
@@ -23,10 +25,20 @@ class TestL10nPeVoucher(AccountTestInvoicingCommon):
                 "journal_id": self.misc_journal.id,
                 "line_ids": [
                     Command.create(
-                        {"account_id": self.account_a.id, "debit": amount, "credit": 0.0, "name": "t"}
+                        {
+                            "account_id": self.account_a.id,
+                            "debit": amount,
+                            "credit": 0.0,
+                            "name": "t",
+                        }
                     ),
                     Command.create(
-                        {"account_id": self.account_b.id, "debit": 0.0, "credit": amount, "name": "t"}
+                        {
+                            "account_id": self.account_b.id,
+                            "debit": 0.0,
+                            "credit": amount,
+                            "name": "t",
+                        }
                     ),
                 ],
             }
@@ -79,7 +91,12 @@ class TestL10nPeVoucher(AccountTestInvoicingCommon):
         self.assertEqual(len(vouchers), 1)
         self.assertEqual(vouchers.l10n_pe_origin_res_id, invoice.id)
         # Receivable and tax lines (no own origin) follow the same voucher.
-        self.assertTrue(all(invoice.line_ids.mapped("l10n_pe_voucher_id")))
+        # ``mapped`` on a many2one returns the union recordset, so ``all(...)``
+        # would be vacuously true on an empty result: check the complement.
+        self.assertFalse(
+            invoice.line_ids.filtered(lambda line: not line.l10n_pe_voucher_id),
+            "no journal item of the invoice is left without a voucher",
+        )
 
     def test_payment_inherits_invoice_voucher(self):
         """Registering a payment moves the payment entry onto the invoice's
@@ -97,12 +114,16 @@ class TestL10nPeVoucher(AccountTestInvoicingCommon):
         )
 
         pay_vouchers = payment.move_id.line_ids.l10n_pe_voucher_id
-        self.assertEqual(pay_vouchers, invoice_voucher, "payment shares the invoice voucher")
+        self.assertEqual(
+            pay_vouchers, invoice_voucher, "payment shares the invoice voucher"
+        )
         self.assertEqual(len(pay_vouchers), 1)
         # The provisional fallback voucher of the payment must be gone.
         stale = self.env["l10n.pe.voucher"].search(
-            [("l10n_pe_origin_model", "=", "account.move"),
-             ("l10n_pe_origin_res_id", "=", payment.move_id.id)]
+            [
+                ("l10n_pe_origin_model", "=", "account.move"),
+                ("l10n_pe_origin_res_id", "=", payment.move_id.id),
+            ]
         )
         self.assertFalse(stale, "fallback voucher cleaned up")
 
@@ -125,7 +146,8 @@ class TestL10nPeVoucher(AccountTestInvoicingCommon):
         pay_vouchers = payment.move_id.line_ids.l10n_pe_voucher_id
         self.assertEqual(len(pay_vouchers), 1, "payment stays on a single voucher")
         self.assertEqual(
-            pay_vouchers.l10n_pe_origin_model, "account.move",
+            pay_vouchers.l10n_pe_origin_model,
+            "account.move",
             "payment keeps its own fallback voucher",
         )
         self.assertEqual(pay_vouchers.l10n_pe_origin_res_id, payment.move_id.id)

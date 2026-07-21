@@ -1,10 +1,11 @@
 from odoo import tests
 
+from odoo.addons.l10n_pe_voucher.tests.common import L10nPeVoucherTestMixin
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 
 @tests.tagged("post_install", "-at_install")
-class TestVoucherPos(TestPoSCommon):
+class TestVoucherPos(L10nPeVoucherTestMixin, TestPoSCommon):
     """Voucher (CUO) resolution for Point of Sale entries."""
 
     def setUp(self):
@@ -13,6 +14,7 @@ class TestVoucherPos(TestPoSCommon):
         self.product = self.create_product(
             "Voucher Product", self.categ_basic, 100.0, 50.0
         )
+        self.customer.write(self._l10n_pe_partner_vals(self.customer.name))
 
     def _close_session(self, session):
         cash_pm = session.payment_method_ids.filtered("is_cash_count")[:1]

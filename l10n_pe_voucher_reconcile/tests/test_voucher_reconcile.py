@@ -2,10 +2,11 @@ from odoo import fields
 from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.l10n_pe_voucher.tests.common import L10nPeVoucherTestMixin
 
 
 @tagged("post_install", "-at_install")
-class TestVoucherReconcile(AccountTestInvoicingCommon):
+class TestVoucherReconcile(L10nPeVoucherTestMixin, AccountTestInvoicingCommon):
     """Voucher (CUO) resolution for payment and bank/cash statement entries."""
 
     @classmethod
