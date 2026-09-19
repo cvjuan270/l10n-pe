@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_picking_form_inherit_l10n_pe_stock_ple" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.l10n_pe_stock_ple</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='extra']" position="inside">
+                <group string="SUNAT - Inventario (Formato 13.1)" name="l10n_pe_ple">
+                    <field name="l10n_pe_ple_document_type_id" />
+                    <field name="l10n_pe_ple_document_ref" />
+                    <field name="l10n_pe_ple_operation_type" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

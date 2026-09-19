@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_l10n_pe_stock_ple_list" model="ir.ui.view">
+        <field name="name">l10n.pe.stock.ple.list</field>
+        <field name="model">l10n.pe.stock.ple</field>
+        <field name="arch" type="xml">
+            <list
+                string="Inventario Permanente Valorizado (13.1)"
+                create="false"
+                edit="false"
+                delete="false"
+                sample="1"
+            >
+                <field name="date" />
+                <field name="product_id" />
+                <field name="product_uom_id" optional="hide" />
+                <field name="categ_id" optional="hide" />
+                <field name="location_id" optional="show" />
+                <field name="document_type_id" optional="show" />
+                <field name="document_ref" optional="show" />
+                <field name="operation_type" optional="show" />
+                <field name="qty_in" sum="Total Entradas" />
+                <field name="cost_in_unit" optional="hide" />
+                <field name="cost_in_total" sum="Total Entradas Valor" />
+                <field name="qty_out" sum="Total Salidas" />
+                <field name="cost_out_unit" optional="hide" />
+                <field name="cost_out_total" sum="Total Salidas Valor" />
+                <field name="qty_balance" />
+                <field name="cost_balance_unit" optional="hide" />
+                <field name="cost_balance_total" />
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="hide"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_l10n_pe_stock_ple_pivot" model="ir.ui.view">
+        <field name="name">l10n.pe.stock.ple.pivot</field>
+        <field name="model">l10n.pe.stock.ple</field>
+        <field name="arch" type="xml">
+            <pivot string="Inventario Permanente Valorizado (13.1)">
+                <field name="product_id" type="row" />
+                <field name="qty_in" type="measure" />
+                <field name="cost_in_total" type="measure" />
+                <field name="qty_out" type="measure" />
+                <field name="cost_out_total" type="measure" />
+                <field name="cost_balance_total" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_l10n_pe_stock_ple_search" model="ir.ui.view">
+        <field name="name">l10n.pe.stock.ple.search</field>
+        <field name="model">l10n.pe.stock.ple</field>
+        <field name="arch" type="xml">
+            <search string="Inventario Permanente Valorizado (13.1)">
+                <field name="product_id" />
+                <field name="location_id" />
+                <field name="document_ref" />
+                <field name="document_type_id" />
+                <separator />
+                <filter
+                    name="filter_this_month"
+                    string="Este mes"
+                    domain="[('date', '&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(months=1, day=1)).strftime('%Y-%m-%d'))]"
+                />
+                <filter
+                    name="filter_this_year"
+                    string="Este año"
+                    domain="[('date', '&gt;=', (context_today() + relativedelta(month=1, day=1)).strftime('%Y-%m-%d'))]"
+                />
+                <separator />
+                <filter
+                    name="filter_entries"
+                    string="Entradas"
+                    domain="[('qty_in', '>', 0)]"
+                />
+                <filter
+                    name="filter_outputs"
+                    string="Salidas"
+                    domain="[('qty_out', '>', 0)]"
+                />
+                <group expand="0" string="Agrupar por">
+                    <filter
+                        name="group_product"
+                        string="Producto"
+                        context="{'group_by': 'product_id'}"
+                    />
+                    <filter
+                        name="group_location"
+                        string="Establecimiento"
+                        context="{'group_by': 'location_id'}"
+                    />
+                    <filter
+                        name="group_operation"
+                        string="Tipo de operación"
+                        context="{'group_by': 'operation_type'}"
+                    />
+                    <filter
+                        name="group_document_type"
+                        string="Tipo de documento"
+                        context="{'group_by': 'document_type_id'}"
+                    />
+                    <filter
+                        name="group_date"
+                        string="Fecha"
+                        context="{'group_by': 'date:month'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_l10n_pe_stock_ple" model="ir.actions.act_window">
+        <field name="name">Inventario Permanente Valorizado (13.1)</field>
+        <field name="res_model">l10n.pe.stock.ple</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="search_view_id" ref="view_l10n_pe_stock_ple_search" />
+        <field name="context">{'search_default_filter_this_month': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay movimientos de inventario valorizados en el período.
+            </p>
+            <p>
+                Este reporte se construye a partir de las capas de valoración
+                de inventario (stock.valuation.layer).
+            </p>
+        </field>
+    </record>
+
+    <!-- Accion de servidor para exportar a Excel desde el menu Accion. -->
+    <record id="action_l10n_pe_stock_ple_export_xlsx" model="ir.actions.server">
+        <field name="name">Exportar a Excel (Formato 13.1)</field>
+        <field name="model_id" ref="model_l10n_pe_stock_ple" />
+        <field name="binding_model_id" ref="model_l10n_pe_stock_ple" />
+        <field name="binding_type">action</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_export_xlsx()</field>
+    </record>
+</odoo>

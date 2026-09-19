@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Tabla 10 SUNAT: Guías de remisión. No existen en l10n_pe.
+         Se dejan SIN internal_type para que NO aparezcan en facturas de
+         compra/venta y solo se usen en traslados (stock.picking). -->
+    <record id="l10n_pe_document_type_09" model="l10n_latam.document.type">
+        <field name="sequence">90</field>
+        <field name="code">09</field>
+        <field name="name">Guía de Remisión - Remitente</field>
+        <field name="report_name">Guía de Remisión - Remitente</field>
+        <field name="country_id" ref="base.pe" />
+        <field name="doc_code_prefix">G</field>
+    </record>
+    <record id="l10n_pe_document_type_31" model="l10n_latam.document.type">
+        <field name="sequence">90</field>
+        <field name="code">31</field>
+        <field name="name">Guía de Remisión - Transportista</field>
+        <field name="report_name">Guía de Remisión - Transportista</field>
+        <field name="country_id" ref="base.pe" />
+        <field name="doc_code_prefix">G</field>
+    </record>
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_l10n_pe_stock_ple_wizard_form" model="ir.ui.view">
+        <field name="model">l10n.pe.stock.ple.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Formato 13.1 - Inventario Permanente Valorizado">
+                <group>
+                    <group>
+                        <field name="date_from" />
+                        <field name="date_to" />
+                        <field
+                            name="company_id"
+                            groups="base.group_multi_company"
+                        />
+                    </group>
+                    <group>
+                        <field name="location_id" />
+                        <field name="product_id" />
+                        <field name="categ_id" />
+                    </group>
+                </group>
+                <p class="text-muted">
+                    El reporte incluye el <strong>saldo inicial</strong> (Tabla 12
+                    código 16) anterior a la fecha "Desde", por existencia y
+                    establecimiento, en la columna de Entradas.
+                </p>
+                <footer>
+                    <button
+                        name="action_print_pdf"
+                        string="Imprimir PDF"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button
+                        name="action_export_xlsx"
+                        string="Exportar Excel"
+                        type="object"
+                        class="btn-secondary"
+                    />
+                    <button
+                        name="action_view_list"
+                        string="Ver en pantalla"
+                        type="object"
+                        class="btn-secondary"
+                    />
+                    <button string="Cancelar" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_l10n_pe_stock_ple_wizard" model="ir.actions.act_window">
+        <field name="name">Formato 13.1 - Inventario Permanente Valorizado</field>
+        <field name="res_model">l10n.pe.stock.ple.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

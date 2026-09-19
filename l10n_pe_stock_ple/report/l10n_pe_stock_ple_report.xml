@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Formato A4 horizontal para el detalle valorizado. -->
+    <record id="paperformat_l10n_pe_stock_ple" model="report.paperformat">
+        <field name="name">Formato 13.1 SUNAT (A4 horizontal)</field>
+        <field name="default" eval="False" />
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">25</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False" />
+        <field name="header_spacing">20</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_l10n_pe_stock_ple" model="ir.actions.report">
+        <field name="name">Formato 13.1 - Inventario Valorizado</field>
+        <field name="model">l10n.pe.stock.ple</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">l10n_pe_stock_ple.report_stock_ple</field>
+        <field name="report_file">l10n_pe_stock_ple.report_stock_ple</field>
+        <field name="binding_model_id" ref="model_l10n_pe_stock_ple" />
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_l10n_pe_stock_ple" />
+    </record>
+</odoo>
