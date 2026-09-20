@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.tgr_sire_mixin</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//block[@name='default_taxes_setting_container']"
+                position="after"
+            >
+                <block
+                    title="SIRE (SUNAT)"
+                    name="sire_setting_container"
+                    groups="account.group_account_manager"
+                >
+                    <setting
+                        id="sire_credentials"
+                        string="Credenciales SIRE"
+                        help="Credenciales de la API SIRE de SUNAT (Registro de Ventas y Compras Electrónico)"
+                    >
+                        <field
+                            name="sire_state"
+                            widget="badge"
+                            decoration-success="sire_state == 'valid'"
+                            decoration-danger="sire_state == 'invalid'"
+                            decoration-muted="sire_state == 'not_configured'"
+                        />
+                        <div class="content-group">
+                            <div class="row mt16">
+                                <label
+                                    for="sire_client_id"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field name="sire_client_id" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="sire_client_secret"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field name="sire_client_secret" password="True" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="sire_sol_username"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field name="sire_sol_username" />
+                            </div>
+                            <div class="row">
+                                <label
+                                    for="sire_sol_password"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field name="sire_sol_password" password="True" />
+                            </div>
+                            <div class="mt16">
+                                <button
+                                    name="action_sire_test_connection"
+                                    type="object"
+                                    string="Probar conexión"
+                                    class="btn-secondary"
+                                />
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

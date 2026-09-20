@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Accion referenciada por el smart button "Tickets" del form de
+         periodo (mas abajo): debe existir ANTES de esa vista, porque
+         %(xmlid)d se resuelve al cargar el arch de la vista. -->
+    <record id="action_sire_rvie_periodo_tickets" model="ir.actions.act_window">
+        <field name="name">Tickets del periodo</field>
+        <field name="res_model">sire.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('rvie_periodo_id', '=', active_id)]</field>
+        <field name="context">{'default_rvie_periodo_id': active_id}</field>
+    </record>
+
+    <record id="view_sire_rvie_periodo_form" model="ir.ui.view">
+        <field name="name">sire.rvie.periodo.form</field>
+        <field name="model">sire.rvie.periodo</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_check_period"
+                        type="object"
+                        string="Consultar periodo"
+                        class="btn-primary"
+                        invisible="local_state in ('preliminary_registered', 'closed')"
+                    />
+                    <button
+                        name="action_compare_proposal"
+                        type="object"
+                        string="Comparar propuesta"
+                        class="btn-primary"
+                        invisible="local_state not in ('checked', 'compared', 'error')"
+                    />
+                    <button
+                        name="action_accept_proposal"
+                        type="object"
+                        string="Aceptar propuesta"
+                        class="btn-primary"
+                        invisible="local_state not in ('checked', 'compared')"
+                        confirm="¿Confirma aceptar la propuesta SUNAT del periodo? Revise la pestaña Diferencias antes de continuar."
+                    />
+                    <button
+                        name="action_open_replacement_wizard"
+                        type="object"
+                        string="Reemplazar propuesta"
+                        invisible="local_state not in ('checked', 'compared')"
+                        groups="account.group_account_manager"
+                    />
+                    <button
+                        name="action_poll_ticket"
+                        type="object"
+                        string="Actualizar ticket"
+                        invisible="not last_ticket_id"
+                    />
+                    <button
+                        name="action_register_preliminary"
+                        type="object"
+                        string="Registrar preliminar"
+                        class="btn-primary"
+                        invisible="local_state not in ('proposal_accepted', 'replacement_uploaded')"
+                        confirm="¿Confirma registrar el preliminar del periodo ante SUNAT?"
+                    />
+                    <button
+                        name="action_open_exclude_voucher_wizard"
+                        type="object"
+                        string="Excluir comprobante"
+                        groups="account.group_account_manager"
+                    />
+                    <field
+                        name="local_state"
+                        widget="statusbar"
+                        statusbar_visible="draft,checked,compared,proposal_accepted,preliminary_registered"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="%(action_sire_rvie_periodo_tickets)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-ticket"
+                        >
+                            <field
+                                name="ticket_count"
+                                widget="statinfo"
+                                string="Tickets"
+                            />
+                        </button>
+                        <button
+                            name="action_view_diff_lines"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-exchange"
+                        >
+                            <field
+                                name="diff_total_count"
+                                widget="statinfo"
+                                string="Diferencias"
+                            />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field
+                                name="periodo_tributario"
+                                placeholder="AAAAMM"
+                                readonly="local_state != 'draft'"
+                            />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field name="sunat_periodo_state" />
+                            <field name="sunat_periodo_state_label" />
+                        </group>
+                        <group>
+                            <field name="last_ticket_id" />
+                            <field name="diff_count_missing_odoo" />
+                            <field name="diff_count_missing_sunat" />
+                            <field name="diff_count_amount_mismatch" />
+                        </group>
+                    </group>
+                    <group string="Descargar resumen">
+                        <field name="download_summary_cod_tipo" nolabel="1" />
+                        <field name="download_summary_cod_tipo_archivo" nolabel="1" />
+                        <button
+                            name="action_download_summary"
+                            type="object"
+                            string="Descargar resumen"
+                        />
+                    </group>
+                    <notebook>
+                        <page string="Propuesta SUNAT" name="proposal">
+                            <field name="proposal_line_ids" readonly="1">
+                                <list decoration-muted="excluded">
+                                    <field name="tipo_cp" />
+                                    <field name="serie" />
+                                    <field name="numero" />
+                                    <field name="fecha_emision" />
+                                    <field name="partner_name" />
+                                    <field name="amount_total" sum="Total" />
+                                    <field name="cod_car" />
+                                    <field
+                                        name="excluded"
+                                        widget="boolean_toggle"
+                                        readonly="1"
+                                    />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Diferencias" name="diffs">
+                            <field name="diff_line_ids" readonly="1">
+                                <list
+                                    decoration-danger="match_status in ('missing_in_odoo', 'missing_in_sunat')"
+                                    decoration-warning="match_status == 'amount_mismatch'"
+                                    decoration-success="match_status == 'matched'"
+                                >
+                                    <field name="match_status" widget="badge" />
+                                    <field name="tipo_cp" />
+                                    <field name="serie" />
+                                    <field name="numero" />
+                                    <field name="fecha_emision" />
+                                    <field name="partner_name" />
+                                    <field name="amount_odoo" sum="Total Odoo" />
+                                    <field name="amount_sunat" sum="Total SUNAT" />
+                                    <field name="amount_diff" sum="Diferencia" />
+                                    <field name="move_id" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sire_rvie_periodo_list" model="ir.ui.view">
+        <field name="name">sire.rvie.periodo.list</field>
+        <field name="model">sire.rvie.periodo</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-danger="local_state == 'error'"
+                decoration-success="local_state in ('preliminary_registered', 'closed')"
+            >
+                <field name="periodo_tributario" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="local_state" widget="badge" />
+                <field name="sunat_periodo_state_label" />
+                <field name="diff_count_missing_odoo" />
+                <field name="diff_count_missing_sunat" />
+                <field name="diff_count_amount_mismatch" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sire_rvie_periodo_search" model="ir.ui.view">
+        <field name="name">sire.rvie.periodo.search</field>
+        <field name="model">sire.rvie.periodo</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="periodo_tributario" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <filter
+                    string="Con diferencias"
+                    name="with_diffs"
+                    domain="['|', '|', ('diff_count_missing_odoo', '&gt;', 0), ('diff_count_missing_sunat', '&gt;', 0), ('diff_count_amount_mismatch', '&gt;', 0)]"
+                />
+                <group expand="0">
+                    <filter
+                        string="Estado local"
+                        name="by_local_state"
+                        context="{'group_by': 'local_state'}"
+                    />
+                    <filter
+                        string="Compañía"
+                        name="by_company"
+                        context="{'group_by': 'company_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sire_rvie_periodo" model="ir.actions.act_window">
+        <field name="name">Registro de Ventas (RVIE)</field>
+        <field name="res_model">sire.rvie.periodo</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Cree un periodo tributario (AAAAMM) para empezar a operar el RVIE
+            </p>
+        </field>
+    </record>
+</odoo>

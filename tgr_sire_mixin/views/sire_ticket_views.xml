@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_sire_ticket_form" model="ir.ui.view">
+        <field name="name">sire.ticket.form</field>
+        <field name="model">sire.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_poll"
+                        type="object"
+                        string="Actualizar estado"
+                        class="btn-primary"
+                        invisible="state in ('draft', 'done', 'cancelled')"
+                    />
+                    <button
+                        name="action_download_result"
+                        type="object"
+                        string="Descargar resultado"
+                        class="btn-secondary"
+                        invisible="state != 'done'"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,sent,pending,done"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field
+                                name="sunat_ticket_number"
+                                readonly="1"
+                                placeholder="Nro. de ticket..."
+                            />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field name="operation_type" />
+                            <field name="periodo_tributario" />
+                            <field name="cod_libro" />
+                        </group>
+                        <group>
+                            <field name="sunat_state_code" />
+                            <field name="sunat_state_label" />
+                            <field name="last_polled_at" />
+                            <field name="result_filename" />
+                            <field name="result_file_type" />
+                            <field name="result_attachment_id" />
+                        </group>
+                    </group>
+                    <group string="Subida TUS" groups="base.group_no_one">
+                        <field name="tus_location" />
+                        <field name="tus_offset" />
+                    </group>
+                    <group string="Error" invisible="not error_message">
+                        <field name="error_message" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sire_ticket_list" model="ir.ui.view">
+        <field name="name">sire.ticket.list</field>
+        <field name="model">sire.ticket</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-danger="state == 'error'"
+                decoration-success="state == 'done'"
+                decoration-muted="state == 'cancelled'"
+            >
+                <field name="sunat_ticket_number" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="operation_type" />
+                <field name="periodo_tributario" />
+                <field name="state" widget="badge" />
+                <field name="sunat_state_label" />
+                <field name="last_polled_at" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_sire_ticket" model="ir.actions.act_window">
+        <field name="name">Tickets SIRE</field>
+        <field name="res_model">sire.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Los tickets se crean automáticamente al disparar una operación asíncrona
+                contra el SIRE
+            </p>
+        </field>
+    </record>
+</odoo>
