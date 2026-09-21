@@ -88,7 +88,7 @@ docs/_build/
 !static/lib/
 
 # ========================================
-# Talentix workspace setup: entradas agregadas
+# Configuración de entorno local
 # ========================================
 venv/
 .venv/
@@ -116,7 +116,14 @@ odoo.conf.local
 # Claude Code / IA Assistant (NO commitear)
 # ========================================
 .claude/
-.talentix-setup-state
 .mcp-pending.md
 .mcp.json
 CLAUDE.local.md
+
+# ========================================
+# Configuración de entorno local
+# ========================================
+.claude.json
+.claude.json.backup
+CLAUDE.md
+.clients.json

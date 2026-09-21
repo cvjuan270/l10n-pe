@@ -102,9 +102,9 @@ SIRE_COD_TIPO_CORRELATIVO = [
 ]
 
 # -- codLibro -----------------------------------------------------------
-# 080000 (RCE) se agregara cuando exista tgr_sire_rce.
 SIRE_COD_LIBRO = [
     ("140000", "Registro de Ventas e Ingresos (RVIE)"),
+    ("080000", "Registro de Compras (RCE)"),
 ]
 
 # -- Anexo IV: extension del archivo a descargar (confirmado contra el

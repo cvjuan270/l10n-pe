@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_sire_rce_periodo"
+        name="Registro de Compras (RCE)"
+        parent="tgr_sire_mixin.menu_sire_root"
+        action="action_sire_rce_periodo"
+        sequence="25"
+    />
+    <menuitem
+        id="menu_sire_rce_diff_line"
+        name="Diferencias RCE"
+        parent="tgr_sire_mixin.menu_sire_root"
+        action="action_sire_rce_diff_line"
+        sequence="35"
+    />
+</odoo>

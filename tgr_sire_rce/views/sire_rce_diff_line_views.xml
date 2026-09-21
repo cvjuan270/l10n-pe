@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_sire_rce_diff_line_list" model="ir.ui.view">
+        <field name="name">sire.rce.diff.line.list</field>
+        <field name="model">sire.rce.diff.line</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-danger="match_status in ('missing_in_odoo', 'missing_in_sunat')"
+                decoration-warning="match_status == 'amount_mismatch'"
+                decoration-success="match_status == 'matched'"
+            >
+                <field name="periodo_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="match_status" widget="badge" />
+                <field name="tipo_cp" />
+                <field name="serie" />
+                <field name="numero" />
+                <field name="fecha_emision" />
+                <field name="partner_name" />
+                <field name="amount_odoo" sum="Total Odoo" />
+                <field name="amount_sunat" sum="Total SUNAT" />
+                <field name="amount_diff" sum="Diferencia" />
+                <field name="move_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sire_rce_diff_line_search" model="ir.ui.view">
+        <field name="name">sire.rce.diff.line.search</field>
+        <field name="model">sire.rce.diff.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="periodo_id" />
+                <field name="serie" />
+                <field name="numero" />
+                <field name="partner_name" />
+                <filter
+                    string="Falta en Odoo"
+                    name="missing_in_odoo"
+                    domain="[('match_status', '=', 'missing_in_odoo')]"
+                />
+                <filter
+                    string="Falta en SUNAT"
+                    name="missing_in_sunat"
+                    domain="[('match_status', '=', 'missing_in_sunat')]"
+                />
+                <filter
+                    string="Monto no coincide"
+                    name="amount_mismatch"
+                    domain="[('match_status', '=', 'amount_mismatch')]"
+                />
+                <group expand="1">
+                    <filter
+                        string="Estado"
+                        name="by_match_status"
+                        context="{'group_by': 'match_status'}"
+                    />
+                    <filter
+                        string="Periodo"
+                        name="by_periodo"
+                        context="{'group_by': 'periodo_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sire_rce_diff_line" model="ir.actions.act_window">
+        <field name="name">Diferencias RCE</field>
+        <field name="res_model">sire.rce.diff.line</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_by_match_status': 1}</field>
+    </record>
+</odoo>
