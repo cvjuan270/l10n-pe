@@ -104,6 +104,31 @@ class TestSireRestClient(SireMixinTestMixin, TransactionCase):
                 )
         self.assertIn("mensaje no catalogado", capture.exception.args[0])
 
+    def test_request_429_shows_friendly_message_not_raw_html(self):
+        """PROBADO EN VIVO: un 429 de SUNAT es un rate limit de su propio
+        nginx, no de su aplicacion -- el body es HTML crudo, no el JSON
+        ``{"cod","msg"}`` habitual. Debe mostrarse un mensaje legible, no
+        el HTML tal cual."""
+        html_body = (
+            "<html><head><title>429 Too Many Requests</title></head>"
+            "<body><center><h1>429 Too Many Requests</h1></center>"
+            "<hr><center>nginx</center></body></html>"
+        )
+        with patch(
+            MOCK_PATH,
+            return_value=sire_mock_response(429, text=html_body),
+        ):
+            with self.assertRaises(SireApiError) as capture:
+                self.ticket_model._sire_request(
+                    "GET",
+                    "https://api-sire.sunat.gob.pe/v1/test",
+                    self.company,
+                )
+        message = capture.exception.args[0]
+        self.assertNotIn("<html>", message)
+        self.assertIn("limitando", message)
+        self.assertEqual(capture.exception.error_description, html_body)
+
     def test_request_4xx_does_not_retry(self):
         with (
             patch(

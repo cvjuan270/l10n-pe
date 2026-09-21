@@ -6,6 +6,7 @@ import io
 import zipfile
 from unittest.mock import patch
 
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -268,6 +269,90 @@ class TestSireRvieComparison(SireRvieTestMixin, AccountTestInvoicingCommon):
             "test_poll_ticket_done_imports_proposal_and_crosses)",
         )
         self.assertFalse(periodo.proposal_line_ids)
+
+    def test_compare_proposal_blocked_while_previous_ticket_pending(self):
+        """PROBADO EN VIVO: sin este guard, cada clic en "Comparar
+        propuesta" creaba un ticket nuevo sin importar si el anterior ya
+        se resolvio, acumulando tickets huerfanos en "Enviado" y sumando
+        llamadas redundantes contra el limite de tasa de SUNAT."""
+        periodo = self.env["sire.rvie.periodo"].create(
+            {"company_id": self.company.id, "periodo_tributario": "202601"}
+        )
+        self.env["sire.ticket"].create(
+            {
+                "company_id": self.company.id,
+                "operation_type": "export_proposal_detail",
+                "periodo_tributario": "202601",
+                "sunat_ticket_number": "202601000090",
+                "state": "sent",
+                "rvie_periodo_id": periodo.id,
+            }
+        )
+        with patch(REST_MOCK_PATH) as mocked:
+            with self.assertRaises(UserError):
+                periodo.action_compare_proposal()
+        mocked.assert_not_called()
+
+    def test_compare_proposal_allowed_despite_older_orphan_ticket(self):
+        """PROBADO EN VIVO: un ticket viejo que quedo huerfano en "Enviado"
+        (de un clic antes de este guard, nunca actualizado) NO debe
+        bloquear para siempre -- solo importa el estado del ULTIMO ticket
+        de este tipo, no de cualquiera."""
+        periodo = self.env["sire.rvie.periodo"].create(
+            {"company_id": self.company.id, "periodo_tributario": "202601"}
+        )
+        self.env["sire.ticket"].create(
+            {
+                "company_id": self.company.id,
+                "operation_type": "export_proposal_detail",
+                "periodo_tributario": "202601",
+                "sunat_ticket_number": "202601000088",
+                "state": "sent",
+                "rvie_periodo_id": periodo.id,
+            }
+        )
+        self.env["sire.ticket"].create(
+            {
+                "company_id": self.company.id,
+                "operation_type": "export_proposal_detail",
+                "periodo_tributario": "202601",
+                "sunat_ticket_number": "202601000090",
+                "state": "done",
+                "rvie_periodo_id": periodo.id,
+            }
+        )
+        payload = {"numTicket": "202601000099"}
+        with patch(
+            REST_MOCK_PATH, return_value=sire_mock_response(200, payload)
+        ) as mocked:
+            ticket = periodo.action_compare_proposal()
+        mocked.assert_called_once()
+        self.assertEqual(ticket.sunat_ticket_number, "202601000099")
+
+    def test_compare_proposal_allowed_after_previous_ticket_done(self):
+        """Un ticket de comparacion anterior ya resuelto (done/error/
+        cancelled) no bloquea volver a comparar -- es el caso legitimo de
+        refrescar el cruce tras corregir algo en Odoo."""
+        periodo = self.env["sire.rvie.periodo"].create(
+            {"company_id": self.company.id, "periodo_tributario": "202601"}
+        )
+        self.env["sire.ticket"].create(
+            {
+                "company_id": self.company.id,
+                "operation_type": "export_proposal_detail",
+                "periodo_tributario": "202601",
+                "sunat_ticket_number": "202601000090",
+                "state": "done",
+                "rvie_periodo_id": periodo.id,
+            }
+        )
+        payload = {"numTicket": "202601000099"}
+        with patch(
+            REST_MOCK_PATH, return_value=sire_mock_response(200, payload)
+        ) as mocked:
+            ticket = periodo.action_compare_proposal()
+        mocked.assert_called_once()
+        self.assertEqual(ticket.sunat_ticket_number, "202601000099")
 
     def test_cross_normalizes_leading_zeros_in_numero(self):
         """PROBADO EN VIVO (periodo 202609, comprobante B001-1134): Odoo

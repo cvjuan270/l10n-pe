@@ -159,14 +159,24 @@ class SireRestClientMixin(models.AbstractModel):
             return response
 
     def _sire_build_error(self, response):
+        """PROBADO EN VIVO: un 429 (rate limit del propio nginx de SUNAT,
+        no de su aplicacion) llega con un cuerpo HTML de varias lineas, no
+        el JSON ``{"cod","msg"}`` habitual -- mostrarlo tal cual en el
+        ``SireApiError`` es inutil para el usuario. Cuando el body no es un
+        JSON valido se usa un mensaje generico legible segun el status
+        HTTP en vez del HTML crudo (que igual queda en
+        ``error_description``/el log, para quien necesite depurar)."""
         error_code = None
         error_description = response.text
         sub_errors = []
         try:
             data = response.json()
+            parsed_ok = isinstance(data, dict)
         except ValueError:
             data = {}
-        if isinstance(data, dict):
+            parsed_ok = False
+
+        if parsed_ok:
             error_code = data.get("cod")
             error_description = data.get("msg") or error_description
             sub_errors = [
@@ -174,12 +184,37 @@ class SireRestClientMixin(models.AbstractModel):
                 for item in data.get("errors") or []
                 if isinstance(item, dict)
             ]
-        message = sire_lookup_error_message(error_code, error_description)
-        if sub_errors:
-            detail = "; ".join(
-                f"{item.get('cod')}: {item.get('msg')}" for item in sub_errors
-            )
-            message = f"{message} ({detail})"
+            message = sire_lookup_error_message(error_code, error_description)
+            if sub_errors:
+                detail = "; ".join(
+                    f"{item.get('cod')}: {item.get('msg')}" for item in sub_errors
+                )
+                message = f"{message} ({detail})"
+        else:
+            http_status_messages = {
+                429: _(
+                    "SUNAT está limitando temporalmente las solicitudes "
+                    "(demasiadas peticiones seguidas). Espera unos minutos "
+                    "antes de reintentar."
+                ),
+                502: _(
+                    "El servidor de SUNAT no está disponible en este "
+                    "momento (502). Intenta nuevamente en unos minutos."
+                ),
+                503: _(
+                    "El servidor de SUNAT no está disponible en este "
+                    "momento (503). Intenta nuevamente en unos minutos."
+                ),
+                504: _(
+                    "El servidor de SUNAT tardó demasiado en responder "
+                    "(504). Intenta nuevamente en unos minutos."
+                ),
+            }
+            message = http_status_messages.get(response.status_code) or _(
+                "SUNAT no respondió correctamente (%(status)s). Intenta "
+                "nuevamente en unos minutos."
+            ) % {"status": response.status_code}
+
         _logger.error(
             "SIRE error %s: %s%s",
             error_code or response.status_code,

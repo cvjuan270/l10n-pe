@@ -381,8 +381,39 @@ class SireRviePeriodo(models.Model):
         archivo real (ver ``_sire_rvie_parse_proposal_content``) se dispara
         recien cuando el usuario actualiza el ticket
         (``action_poll_ticket`` -> ``_sire_rvie_sync_state_from_ticket``) y
-        SUNAT ya lo marco como terminado."""
+        SUNAT ya lo marco como terminado.
+
+        PROBADO EN VIVO: sin el guard de abajo, cada clic en "Comparar
+        propuesta" -- el boton sigue visible despues de comparar, para
+        poder refrescar el cruce -- dispara una llamada real a SUNAT y crea
+        un ticket nuevo sin importar si el anterior ya se resolvio,
+        acumulando tickets huerfanos en "Enviado" y sumando llamadas
+        redundantes contra el limite de tasa de SUNAT. Se bloquea solo si
+        el ULTIMO ticket de este mismo tipo todavia esta en curso
+        (``sent``/``pending``) -- se mira solo el ultimo (``search`` con
+        ``order="id desc"``, NO ``self.ticket_ids`` filtrado: ese campo no
+        garantiza el orden ``id desc`` de ``sire.ticket`` cuando los
+        registros se acaban de crear en la misma transaccion), para que un
+        ticket huerfano de un clic viejo (nunca actualizado, PROBADO EN
+        VIVO: ocurria antes de este guard) no bloquee para siempre una vez
+        que un ticket posterior ya termino."""
         self.ensure_one()
+        last_proposal_ticket = self.env["sire.ticket"].search(
+            [
+                ("rvie_periodo_id", "=", self.id),
+                ("operation_type", "=", "export_proposal_detail"),
+            ],
+            order="id desc",
+            limit=1,
+        )
+        if last_proposal_ticket.state in ("sent", "pending"):
+            raise UserError(
+                _(
+                    "Ya hay un ticket de comparación en curso para este "
+                    'periodo. Presiona "Actualizar ticket" para revisar su '
+                    "estado antes de volver a comparar."
+                )
+            )
         response = self._sire_request(
             "GET",
             self._sire_rvie_proposal_detail_url(),
