@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils: https://docutils.sourceforge.io/" />
+<title>Proceso del contador -- SIRE Registro de Ventas (RVIE)</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 9511 2024-01-13 09:50:07Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+*/
+
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code, code { background-color: #eeeeee }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em ;
+  border: 1px solid #999 ;
+  border-collapse: collapse }
+
+table.docutils td, table.docutils th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top ;
+  border: 1px solid #999 }
+
+table.docutils th.field-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* figuras de captura de pantalla: sin decoracion, solo borde tecnico */
+div.figure {
+  margin: 1.5em 0 ;
+  page-break-inside: avoid }
+
+div.figure img {
+  max-width: 100% ;
+  border: 1px solid #999 }
+
+p.caption {
+  font-style: italic ;
+  font-size: smaller ;
+  margin-top: 0.3em }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="proceso-del-contador-sire-registro-de-ventas-rvie">
+
+<h1 class="title">Proceso del contador -- SIRE Registro de Ventas (RVIE)</h1>
+
+<p>Secuencia regular para declarar un periodo tributario del Registro de Ventas e
+Ingresos Electrónico (RVIE) con el módulo <code>tgr_sire_rvie</code>. Menú:
+<strong>SIRE &gt; Registro de Ventas (RVIE)</strong>.</p>
+
+<p><strong>Tabla de contenidos</strong></p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#paso-1" id="toc-entry-1">1. Crear o abrir el periodo</a></li>
+<li><a class="reference internal" href="#paso-2" id="toc-entry-2">2. Consultar periodo</a></li>
+<li><a class="reference internal" href="#paso-3" id="toc-entry-3">3. Verificar el envío electrónico de los comprobantes</a></li>
+<li><a class="reference internal" href="#paso-4" id="toc-entry-4">4. Comparar propuesta</a></li>
+<li><a class="reference internal" href="#paso-5" id="toc-entry-5">5. Actualizar ticket</a></li>
+<li><a class="reference internal" href="#paso-6" id="toc-entry-6">6. Revisar la pestaña Diferencias</a></li>
+<li><a class="reference internal" href="#paso-7" id="toc-entry-7">7. Aceptar o reemplazar la propuesta</a></li>
+<li><a class="reference internal" href="#paso-8" id="toc-entry-8">8. Registrar preliminar</a></li>
+<li><a class="reference internal" href="#acciones-auxiliares" id="toc-entry-9">Acciones auxiliares</a></li>
+<li><a class="reference internal" href="#maquina-de-estados" id="toc-entry-10">Máquina de estados (local_state)</a></li>
+</ul>
+</div>
+
+<div class="section" id="paso-1">
+<h2><a class="toc-backref" href="#toc-entry-1">1. Crear o abrir el periodo</a></h2>
+<p>Crear (o abrir si ya existe) el registro del periodo tributario <code>AAAAMM</code> en
+<strong>SIRE &gt; Registro de Ventas (RVIE)</strong>.</p>
+<div class="figure">
+<img alt="Lista de periodos RVIE" src="screenshots/01_lista_periodos.png" />
+<p class="caption">Lista de periodos RVIE, con el detalle de diferencias por periodo
+(Faltan en Odoo / Faltan en SUNAT / Montos no coinciden).</p>
+</div>
+</div>
+
+<div class="section" id="paso-2">
+<h2><a class="toc-backref" href="#toc-entry-2">2. Consultar periodo</a></h2>
+<p>Trae el estado oficial de SUNAT (<code>sunat_periodo_state_label</code>: "Presentado" /
+"No Presentado") y pasa <code>local_state</code> de <code>draft</code> a
+<code>checked</code>.</p>
+</div>
+
+<div class="section" id="paso-3">
+<h2><a class="toc-backref" href="#toc-entry-3">3. Verificar el envío electrónico de los comprobantes</a></h2>
+<p>Antes de comparar, verificar que todos los comprobantes de venta del periodo ya se
+transmitieron electrónicamente a SUNAT. Un comprobante contabilizado pero aún "por
+enviar" (<code>edi_state = to_send</code>) aparece como diferencia real ("Falta en
+SUNAT") hasta que se envíe -- es el comportamiento esperado, no un error de la
+comparación.</p>
+</div>
+
+<div class="section" id="paso-4">
+<h2><a class="toc-backref" href="#toc-entry-4">4. Comparar propuesta</a></h2>
+<p>Crea el ticket de descarga de la propuesta SUNAT (servicio 5.18, asíncrono).</p>
+<div class="figure">
+<img alt="Formulario del periodo con los botones de accion" src="screenshots/02_periodo_form_botones.png" />
+<p class="caption">Formulario del periodo: barra de botones (Consultar periodo,
+Comparar propuesta, Aceptar propuesta, Reemplazar propuesta, Actualizar ticket,
+Excluir comprobante) y pestaña "Propuesta SUNAT" con el detalle descargado.</p>
+</div>
+</div>
+
+<div class="section" id="paso-5">
+<h2><a class="toc-backref" href="#toc-entry-5">5. Actualizar ticket</a></h2>
+<p>Se presiona (una o más veces, hasta que el ticket quede en estado "Terminado") para
+consultar si SUNAT ya generó el archivo. Al terminar, el sistema automáticamente
+descarga y parsea el archivo real, puebla la propuesta y cruza contra el registro de
+ventas de Odoo. <code>local_state</code> pasa a <code>compared</code>.</p>
+<div class="figure">
+<img alt="Lista de tickets del periodo" src="screenshots/04_tickets.png" />
+<p class="caption">Lista de tickets asociados al periodo, con su estado SUNAT
+("Terminado", "Enviado") y fecha de última consulta.</p>
+</div>
+</div>
+
+<div class="section" id="paso-6">
+<h2><a class="toc-backref" href="#toc-entry-6">6. Revisar la pestaña Diferencias</a></h2>
+<p>Paso clave del contador. Se revisan los tres bloques de resumen (cantidad, base
+imponible, impuestos y total) y el detalle línea por línea:</p>
+<ul class="simple">
+<li><code>Coincide</code>: sin acción.</li>
+<li><code>Falta en SUNAT</code>: comprobante en Odoo sin contraparte en la propuesta
+SUNAT -- verificar envío electrónico pendiente, rechazo, o registro faltante.</li>
+<li><code>Falta en Odoo</code>: comprobante en la propuesta SUNAT sin contraparte en
+Odoo -- verificar comprobantes emitidos fuera de Odoo o pendientes de contabilizar.</li>
+</ul>
+<div class="figure">
+<img alt="Pestana Diferencias con los tres bloques de resumen" src="screenshots/03_diferencias_resumen.png" />
+<p class="caption">Pestaña "Diferencias": resumen por Coincide / Falta en SUNAT /
+Falta en Odoo (cantidad, base imponible, impuestos, total) y detalle de líneas.</p>
+</div>
+</div>
+
+<div class="section" id="paso-7">
+<h2><a class="toc-backref" href="#toc-entry-7">7. Aceptar o reemplazar la propuesta</a></h2>
+<p>Según el resultado de la revisión:</p>
+<ul class="simple">
+<li><strong>Propuesta correcta</strong>: <strong>Aceptar propuesta</strong> (camino A) --
+crea ticket asíncrono; actualizar hasta que quede "Terminado". <code>local_state</code>
+pasa a <code>proposal_accepted</code>.</li>
+<li><strong>Propuesta con diferencias a corregir</strong>: <strong>Reemplazar
+propuesta</strong> (camino B) -- sube el <code>.zip</code> de reemplazo vía el wizard;
+actualizar el ticket hasta que quede "Terminado". <code>local_state</code> pasa a
+<code>replacement_uploaded</code>.</li>
+</ul>
+</div>
+
+<div class="section" id="paso-8">
+<h2><a class="toc-backref" href="#toc-entry-8">8. Registrar preliminar</a></h2>
+<p>Solo habilitado desde <code>proposal_accepted</code>/<code>replacement_uploaded</code>.
+Presenta el registro de ventas del periodo ante SUNAT. <code>local_state</code> pasa a
+<code>preliminary_registered</code>. Bloqueado con los mensajes 2293/2294/2295 del
+manual SUNAT si el estado no corresponde.</p>
+</div>
+
+<div class="section" id="acciones-auxiliares">
+<h2><a class="toc-backref" href="#toc-entry-9">Acciones auxiliares</a></h2>
+<p>Disponibles en cualquier punto del flujo:</p>
+<ul class="simple">
+<li><strong>Excluir comprobante</strong>: retira definitivamente un comprobante del
+registro (irreversible en SUNAT; requiere el grupo de gestor contable).</li>
+<li><strong>Descargar resumen</strong>: descarga reportes de resumen (propuesta,
+preliminar, registro, etc.) para archivo o respaldo.</li>
+</ul>
+</div>
+
+<div class="section" id="maquina-de-estados">
+<h2><a class="toc-backref" href="#toc-entry-10">Máquina de estados (local_state)</a></h2>
+<pre class="literal-block">
+draft -&gt; checked -&gt; compared -+-&gt; proposal_accepted    -+-&gt; preliminary_registered
+                               +-&gt; replacement_uploaded -+
+</pre>
+<p><code>error</code> es un estado terminal alcanzable desde cualquier punto ante una
+falla de comunicación o de negocio no atrapada por los guards locales.</p>
+</div>
+
+</div>
+</body>
+</html>

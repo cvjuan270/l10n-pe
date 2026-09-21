@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_sire_ticket_user,sire.ticket.user,model_sire_ticket,account.group_account_user,1,1,1,0
+access_sire_ticket_manager,sire.ticket.manager,model_sire_ticket,account.group_account_manager,1,1,1,1

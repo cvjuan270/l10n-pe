@@ -1,0 +1,9 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_sire_rvie_periodo_user,sire.rvie.periodo.user,model_sire_rvie_periodo,account.group_account_user,1,1,1,0
+access_sire_rvie_periodo_manager,sire.rvie.periodo.manager,model_sire_rvie_periodo,account.group_account_manager,1,1,1,1
+access_sire_rvie_proposal_line_user,sire.rvie.proposal.line.user,model_sire_rvie_proposal_line,account.group_account_user,1,0,0,0
+access_sire_rvie_proposal_line_manager,sire.rvie.proposal.line.manager,model_sire_rvie_proposal_line,account.group_account_manager,1,1,1,1
+access_sire_rvie_diff_line_user,sire.rvie.diff.line.user,model_sire_rvie_diff_line,account.group_account_user,1,0,0,0
+access_sire_rvie_diff_line_manager,sire.rvie.diff.line.manager,model_sire_rvie_diff_line,account.group_account_manager,1,1,1,1
+access_sire_rvie_replacement_wizard_manager,sire.rvie.replacement.wizard.manager,model_sire_rvie_replacement_wizard,account.group_account_manager,1,1,1,1
+access_sire_rvie_exclude_voucher_wizard_manager,sire.rvie.exclude.voucher.wizard.manager,model_sire_rvie_exclude_voucher_wizard,account.group_account_manager,1,1,1,1

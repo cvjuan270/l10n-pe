@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_l10n_pe_voucher_backfill_form" model="ir.ui.view">
+        <field name="name">l10n.pe.voucher.backfill.form</field>
+        <field name="model">l10n.pe.voucher.backfill</field>
+        <field name="arch" type="xml">
+            <form string="Assign vouchers to historical entries">
+                <field name="state" invisible="1" />
+                <!-- Setup -->
+                <div invisible="state != 'draft'">
+                    <div class="alert alert-info" role="alert">
+                        Assigns a voucher (CUO) to already posted entries that
+                        have none, in chronological order. It is idempotent and
+                        resumable: entries are processed in batches, so the
+                        progress bar advances without freezing the screen.
+                    </div>
+                    <group>
+                        <field name="date_from" />
+                        <field name="batch_size" />
+                        <field name="pending_count" />
+                    </group>
+                </div>
+                <!-- Progress -->
+                <div invisible="state == 'draft'">
+                    <group>
+                        <field
+                            name="progress"
+                            widget="progressbar"
+                            readonly="1"
+                        />
+                        <label for="processed_count" string="Processed" />
+                        <div>
+                            <field name="processed_count" class="oe_inline" /> /
+                            <field name="total_count" class="oe_inline" />
+                            (<field name="pending_count" class="oe_inline" /> remaining)
+                        </div>
+                    </group>
+                    <div
+                        class="alert alert-success"
+                        role="alert"
+                        invisible="state != 'done'"
+                    >
+                        All entries have a voucher.
+                    </div>
+                </div>
+                <footer>
+                    <button
+                        name="action_start"
+                        type="object"
+                        string="Start"
+                        class="btn-primary"
+                        invisible="state != 'draft' or pending_count == 0"
+                    />
+                    <button
+                        name="action_continue"
+                        type="object"
+                        string="Continue"
+                        class="btn-primary"
+                        invisible="state != 'running' or pending_count == 0"
+                    />
+                    <button string="Close" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_l10n_pe_voucher_backfill" model="ir.actions.act_window">
+        <field name="name">Assign Historical Vouchers</field>
+        <field name="res_model">l10n.pe.voucher.backfill</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_l10n_pe_voucher_backfill"
+        name="Assign Historical Vouchers"
+        parent="account.menu_finance_entries"
+        action="action_l10n_pe_voucher_backfill"
+        sequence="91"
+        groups="account.group_account_manager"
+    />
+</odoo>

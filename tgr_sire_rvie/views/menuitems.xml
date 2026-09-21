@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_sire_rvie_periodo"
+        name="Registro de Ventas (RVIE)"
+        parent="tgr_sire_mixin.menu_sire_root"
+        action="action_sire_rvie_periodo"
+        sequence="20"
+    />
+    <menuitem
+        id="menu_sire_rvie_diff_line"
+        name="Diferencias RVIE"
+        parent="tgr_sire_mixin.menu_sire_root"
+        action="action_sire_rvie_diff_line"
+        sequence="30"
+    />
+</odoo>

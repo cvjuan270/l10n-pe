@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- View res.config.settings form -->
+    <record id="view_res_config_settings_form" model="ir.ui.view">
+        <field name="name">view.res.config.settings.form</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='analytic']" position="inside">
+                <setting
+                    string="Diario de asientos de destino"
+                    groups="account.group_account_user"
+                >
+                    <field name="analytic_account_journal_target_id" required="True" />
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="report_stock_ple">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <!-- ====== CABECERA ====== -->
+                    <div class="text-center mb-2">
+                        <h4 class="mb-0">
+                            REGISTRO DE INVENTARIO PERMANENTE VALORIZADO
+                        </h4>
+                        <h5 class="mt-0">DETALLE DEL INVENTARIO VALORIZADO (Formato 13.1)</h5>
+                    </div>
+                    <table class="table table-sm table-borderless mb-3">
+                        <tr>
+                            <td><strong>PERÍODO:</strong></td>
+                            <td>
+                                <t t-if="date_from">
+                                    <span t-esc="date_from" />
+                                    -
+                                    <span t-esc="date_to" />
+                                </t>
+                            </td>
+                            <td><strong>RUC:</strong></td>
+                            <td><span t-esc="company.vat or ''" /></td>
+                        </tr>
+                        <tr>
+                            <td><strong>RAZÓN SOCIAL:</strong></td>
+                            <td colspan="3"><span t-esc="company.name or ''" /></td>
+                        </tr>
+                    </table>
+
+                    <!-- ====== DETALLE POR EXISTENCIA / ESTABLECIMIENTO ====== -->
+                    <t t-foreach="groups" t-as="grp">
+                        <table class="table table-sm table-borderless mb-1">
+                            <tr>
+                                <td>
+                                    <strong>CÓDIGO:</strong>
+                                    <span t-esc="grp['product'].default_code or ''" />
+                                </td>
+                                <td>
+                                    <strong>DESCRIPCIÓN:</strong>
+                                    <span t-esc="grp['product'].display_name" />
+                                </td>
+                                <td>
+                                    <strong>U.M. (T6):</strong>
+                                    <span
+                                        t-esc="grp['product'].uom_id.l10n_pe_sunat_code or grp['product'].uom_id.name or ''"
+                                    />
+                                </td>
+                                <td>
+                                    <strong>TIPO EXIST. (T5):</strong>
+                                    <span t-esc="grp['product'].l10n_pe_existence_type or ''" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>ESTABLECIMIENTO:</strong>
+                                    <span t-esc="grp['location'].display_name or ''" />
+                                </td>
+                                <td colspan="3">
+                                    <strong>MÉTODO VALUACIÓN (T14):</strong>
+                                    <span t-esc="grp['method_label']" />
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="table table-sm table-bordered" style="font-size: 9px;">
+                            <thead>
+                                <tr class="text-center">
+                                    <th rowspan="2">Fecha</th>
+                                    <th rowspan="2">Tipo doc.</th>
+                                    <th rowspan="2">Serie-Número</th>
+                                    <th rowspan="2">Tipo operación</th>
+                                    <th colspan="3">Entradas</th>
+                                    <th colspan="3">Salidas</th>
+                                    <th colspan="3">Saldo final</th>
+                                </tr>
+                                <tr class="text-center">
+                                    <th>Cant.</th>
+                                    <th>C. Unit.</th>
+                                    <th>C. Total</th>
+                                    <th>Cant.</th>
+                                    <th>C. Unit.</th>
+                                    <th>C. Total</th>
+                                    <th>Cant.</th>
+                                    <th>C. Unit.</th>
+                                    <th>C. Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Fila de SALDO INICIAL (Tabla 12 = 16) en Entradas -->
+                                <t t-if="grp['opening']">
+                                    <tr style="background-color: #fbfbe6;">
+                                        <td><span t-esc="date_from" /></td>
+                                        <td />
+                                        <td />
+                                        <td>16 Saldo inicial</td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['qty']" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['unit']" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['value']" t-options="{'widget': 'float', 'precision': 2}" />
+                                        </td>
+                                        <td class="text-end">0.0000</td>
+                                        <td />
+                                        <td class="text-end">0.00</td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['qty']" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['unit']" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="grp['opening']['value']" t-options="{'widget': 'float', 'precision': 2}" />
+                                        </td>
+                                    </tr>
+                                </t>
+                                <!-- Movimientos del periodo -->
+                                <t t-foreach="grp['lines']" t-as="line">
+                                    <tr>
+                                        <td>
+                                            <span t-esc="line.date" t-options="{'widget': 'date'}" />
+                                        </td>
+                                        <td><span t-esc="line.document_type_id.code or ''" /></td>
+                                        <td><span t-esc="line.document_ref or ''" /></td>
+                                        <td>
+                                            <span
+                                                t-esc="dict(line._fields['operation_type'].selection).get(line.operation_type, '')"
+                                            />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.qty_in" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_in_unit" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_in_total" t-options="{'widget': 'float', 'precision': 2}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.qty_out" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_out_unit" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_out_total" t-options="{'widget': 'float', 'precision': 2}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.qty_balance" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_balance_unit" t-options="{'widget': 'float', 'precision': 4}" />
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="line.cost_balance_total" t-options="{'widget': 'float', 'precision': 2}" />
+                                        </td>
+                                    </tr>
+                                </t>
+                                <!-- Totales por existencia (incluye saldo inicial en Entradas) -->
+                                <tr class="fw-bold" style="background-color: #f0f0f0;">
+                                    <td colspan="4" class="text-end">TOTALES</td>
+                                    <td class="text-end">
+                                        <span t-esc="grp['tot_qty_in']" t-options="{'widget': 'float', 'precision': 4}" />
+                                    </td>
+                                    <td />
+                                    <td class="text-end">
+                                        <span t-esc="grp['tot_cost_in']" t-options="{'widget': 'float', 'precision': 2}" />
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-esc="grp['tot_qty_out']" t-options="{'widget': 'float', 'precision': 4}" />
+                                    </td>
+                                    <td />
+                                    <td class="text-end">
+                                        <span t-esc="grp['tot_cost_out']" t-options="{'widget': 'float', 'precision': 2}" />
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-esc="grp['bal_qty']" t-options="{'widget': 'float', 'precision': 4}" />
+                                    </td>
+                                    <td />
+                                    <td class="text-end">
+                                        <span t-esc="grp['bal_total']" t-options="{'widget': 'float', 'precision': 2}" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

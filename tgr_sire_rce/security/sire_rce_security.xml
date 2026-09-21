@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="sire_rce_periodo_company_rule" model="ir.rule">
+        <field name="name">SIRE RCE Periodo: multi-company</field>
+        <field name="model_id" ref="model_sire_rce_periodo" />
+        <field name="global" eval="True" />
+        <field
+            name="domain_force"
+        >['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="sire_rce_diff_line_company_rule" model="ir.rule">
+        <field name="name">SIRE RCE Diff Line: multi-company</field>
+        <field name="model_id" ref="model_sire_rce_diff_line" />
+        <field name="global" eval="True" />
+        <field
+            name="domain_force"
+        >['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="sire_rce_proposal_line_company_rule" model="ir.rule">
+        <field name="name">SIRE RCE Proposal Line: multi-company</field>
+        <field name="model_id" ref="model_sire_rce_proposal_line" />
+        <field name="global" eval="True" />
+        <field
+            name="domain_force"
+        >['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

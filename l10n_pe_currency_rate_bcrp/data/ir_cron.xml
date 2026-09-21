@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Actualizacion diaria del tipo de cambio BCRP en Community. Con
+         currency_rate_live (enterprise) instalado el metodo no hace nada:
+         la actualizacion corre por el cron estandar de enterprise con el
+         proveedor bcrp_api del modulo puente. -->
+    <record id="ir_cron_l10n_pe_bcrp_rate_update" model="ir.cron">
+        <field name="name">BCRP: actualizar tipo de cambio</field>
+        <field name="model_id" ref="base.model_res_company" />
+        <field name="state">code</field>
+        <field name="code">model._l10n_pe_bcrp_update_rates()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+    </record>
+</odoo>

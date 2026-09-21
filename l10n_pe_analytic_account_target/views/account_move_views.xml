@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- View account.move form -->
+    <record id="view_account_move_form" model="ir.ui.view">
+        <field name="name">view.account.move.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <field name="origin_analytic_line_id" invisible="1" />
+                <field name="origin_move_id" invisible="1" />
+                <button
+                    name="open_analytic_line_form"
+                    class="oe_stat_button"
+                    icon="fa-bars"
+                    type="object"
+                    invisible="not id or not origin_analytic_line_id"
+                    string="Apunte analítico Origen"
+                />
+                <button
+                    name="open_account_move_form_origin"
+                    class="oe_stat_button"
+                    icon="fa-book"
+                    type="object"
+                    string="Asiento Contable Origen"
+                    invisible="not id or not origin_move_id"
+                />
+
+                <field name="target_move_count" invisible="1" />
+                <button
+                    name="open_destination_move_view"
+                    class="oe_stat_button"
+                    icon="fa-bars"
+                    type="object"
+                    invisible="not id or target_move_count == 0"
+                    groups="analytic.group_analytic_accounting"
+                >
+                    <field
+                        name="target_move_count"
+                        string="A. C. Destino"
+                        widget="statinfo"
+                    />
+                </button>
+            </div>
+        </field>
+    </record>
+</odoo>

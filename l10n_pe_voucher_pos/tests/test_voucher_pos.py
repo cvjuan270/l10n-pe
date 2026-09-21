@@ -1,0 +1,97 @@
+from odoo import tests
+
+from odoo.addons.l10n_pe_voucher.tests.common import L10nPeVoucherTestMixin
+from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+
+@tests.tagged("post_install", "-at_install")
+class TestVoucherPos(L10nPeVoucherTestMixin, TestPoSCommon):
+    """Voucher (CUO) resolution for Point of Sale entries."""
+
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.product = self.create_product(
+            "Voucher Product", self.categ_basic, 100.0, 50.0
+        )
+        self.customer.write(self._l10n_pe_partner_vals(self.customer.name))
+
+    def _close_session(self, session):
+        cash_pm = session.payment_method_ids.filtered("is_cash_count")[:1]
+        total_cash = sum(
+            session.mapped("order_ids.payment_ids")
+            .filtered(lambda p: p.payment_method_id == cash_pm)
+            .mapped("amount")
+        )
+        session.post_closing_cash_details(total_cash)
+        session.close_session_from_ui()
+
+    def test_pos_invoice_and_session_vouchers(self):
+        """An invoiced order is grouped under its pos.order voucher; the session
+        closing entry is grouped under its pos.session voucher. No entry is left
+        without a voucher."""
+        session = self._start_pos_session(self.cash_pm1, 0)
+        orders = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product, 1)],
+                    "payments": [(self.cash_pm1, 100)],
+                    "customer": self.customer,
+                    "is_invoiced": True,
+                    "uuid": "00100-010-0001",
+                },
+                {
+                    "pos_order_lines_ui_args": [(self.product, 2)],
+                    "payments": [(self.cash_pm1, 200)],
+                    "customer": self.customer,
+                    "is_invoiced": False,
+                    "uuid": "00100-010-0002",
+                },
+            ]
+        )
+
+        # Invoiced order -> its invoice is grouped under the pos.order voucher.
+        invoiced = orders["00100-010-0001"]
+        self.assertTrue(invoiced.account_move, "invoiced order has an invoice")
+        inv_voucher = invoiced.account_move.line_ids.l10n_pe_voucher_id
+        self.assertEqual(len(inv_voucher), 1)
+        self.assertEqual(inv_voucher.l10n_pe_origin_model, "pos.order")
+        self.assertEqual(inv_voucher.l10n_pe_origin_res_id, invoiced.id)
+
+        self._close_session(session)
+
+        # Session closing entry: the sales/IGV/cost summary lines are grouped
+        # under the single pos.session voucher, while the cash settlement lines
+        # get a per-payment-journal voucher (one CUO per journal, never mixing
+        # payment methods).
+        self.assertTrue(session.move_id, "session has a closing entry")
+        vouchers = session.move_id.line_ids.l10n_pe_voucher_id
+        origins = vouchers.mapped("l10n_pe_origin_model")
+        sess_voucher = vouchers.filtered(
+            lambda v: v.l10n_pe_origin_model == "pos.session"
+        )
+        self.assertEqual(
+            sess_voucher.l10n_pe_origin_res_id,
+            session.id,
+            "summary lines grouped under the pos.session voucher",
+        )
+        self.assertTrue(
+            any(origin.startswith("pos.session.journal:") for origin in origins),
+            "cash settlement grouped under a per-journal voucher",
+        )
+
+        # No voucher mixes lines settled through two different payment journals.
+        pos_journal = session.move_id.journal_id
+        for voucher in vouchers:
+            journals = voucher.move_line_ids.mapped(
+                lambda line: line._l10n_pe_pos_settlement_journal(pos_journal)
+            )
+            self.assertLessEqual(
+                len(journals), 1, "a voucher settles at most one payment journal"
+            )
+
+        # No posted entry of this session is left without a voucher.
+        self.assertFalse(
+            self.env["account.move"]._l10n_pe_moves_to_backfill(),
+            "no posted entry without a voucher",
+        )

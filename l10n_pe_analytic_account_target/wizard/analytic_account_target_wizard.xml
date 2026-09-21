@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- View analytic.account.target.wizard form -->
+    <record id="view_analytic_account_target_wizard_form" model="ir.ui.view">
+        <field name="name">view.analytic.account.target.wizard.form</field>
+        <field name="model">analytic.account.target.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Asistente de Asientos de Destino para Apuntes Analíticos">
+                <sheet>
+                    <div
+                        class="p-2"
+                    >Este formulario permite generar asientos de destino basados en los apuntes analíticos dentro de un período específico. El proceso considera las normas de reparto establecidas, aplicando los porcentajes correspondientes a cada cuenta de destino. Para utilizar esta herramienta, siga estos pasos:<br
+                    />
+                        - Ingrese la fecha de inicio del período a analizar.<br />
+                        - Ingrese la fecha final del período a analizar.<br />
+                        - Haga clic en "Confirmar" para generar los asientos de destino.<br
+                    />
+                        El sistema procesará todos los apuntes analíticos comprendidos entre las fechas especificadas y creará los asientos de destino correspondientes, aplicando automáticamente los porcentajes de reparto definidos en las normas contables de la empresa.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="start_date" />
+                            <field name="end_date" />
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="get_accont_analytic_lines"
+                        type="object"
+                        string="Confirmar"
+                        class="oe_highlight"
+                    />
+                    <button special="cancel" string="Cancelar" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action analytic.account.target.wizard -->
+    <record id="action_analytic_account_target_wizard" model="ir.actions.act_window">
+        <field
+            name="name"
+        >Asistente de Asientos de Destino para Apuntes Analíticos</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">analytic.account.target.wizard</field>
+        <field name="view_mode">form</field>
+        <!-- <field name="binding_model_id" ref="addon.model_model_name"/> -->
+        <field name="target">new</field>
+    </record>
+</odoo>

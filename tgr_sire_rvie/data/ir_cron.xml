@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- noupdate: el cron se entrega desactivado; activarlo y ajustar su
+     frecuencia es una decision operativa del cliente. Sin esto, cada
+     actualizacion del modulo reiniciaria silenciosamente esa eleccion. -->
+<odoo noupdate="1">
+    <record id="ir_cron_sire_rvie_check_periods" model="ir.cron">
+        <field name="name">SIRE RVIE: consultar periodos habilitados</field>
+        <field name="model_id" ref="model_sire_rvie_periodo" />
+        <field name="state">code</field>
+        <field name="code">model.search([]).action_check_period()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">months</field>
+        <field name="active" eval="False" />
+        <field name="nextcall">2026-01-01 00:00:00</field>
+    </record>
+</odoo>

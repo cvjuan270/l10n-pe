@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_sire_rvie_exclude_voucher_wizard_form" model="ir.ui.view">
+        <field name="name">sire.rvie.exclude.voucher.wizard.form</field>
+        <field name="model">sire.rvie.exclude.voucher.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="alert alert-danger" role="alert">
+                    Esta acción excluye el comprobante de forma DEFINITIVA e
+                    IRREVERSIBLE de la propuesta RVIE en SUNAT.
+                </div>
+                <group>
+                    <field name="periodo_id" invisible="1" />
+                    <field
+                        name="company_id"
+                        groups="base.group_multi_company"
+                        readonly="1"
+                    />
+                    <field
+                        name="diff_line_id"
+                        domain="[('periodo_id', '=', periodo_id)]"
+                    />
+                    <field name="move_id" readonly="1" />
+                    <field name="cod_car" />
+                    <field name="confirm_irreversible" />
+                </group>
+                <footer>
+                    <button
+                        name="action_exclude"
+                        type="object"
+                        string="Excluir definitivamente"
+                        class="btn-danger"
+                    />
+                    <button string="Cancelar" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

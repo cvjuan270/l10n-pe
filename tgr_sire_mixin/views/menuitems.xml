@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_sire_root"
+        name="SIRE"
+        parent="account.menu_finance"
+        sequence="10"
+    />
+    <menuitem
+        id="menu_sire_ticket"
+        name="Tickets"
+        parent="menu_sire_root"
+        action="action_sire_ticket"
+        sequence="10"
+    />
+</odoo>

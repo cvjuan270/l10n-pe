@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_l10n_pe_voucher_list" model="ir.ui.view">
+        <field name="name">l10n.pe.voucher.list</field>
+        <field name="model">l10n.pe.voucher</field>
+        <field name="arch" type="xml">
+            <list string="Vouchers">
+                <field name="name" />
+                <field name="date" />
+                <field name="move_count" string="# Entries" />
+                <field name="line_count" string="# Items" />
+                <field name="l10n_pe_origin_model" optional="hide" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_l10n_pe_voucher_form" model="ir.ui.view">
+        <field name="name">l10n.pe.voucher.form</field>
+        <field name="model">l10n.pe.voucher</field>
+        <field name="arch" type="xml">
+            <form string="Voucher">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_open_journal_items"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bars"
+                        >
+                            <field
+                                name="line_count"
+                                widget="statinfo"
+                                string="Journal Items"
+                            />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                        <group>
+                            <field name="l10n_pe_origin_model" readonly="1" />
+                            <field name="l10n_pe_origin_res_id" readonly="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Journal Items" name="lines">
+                            <field name="move_line_ids" readonly="1">
+                                <list>
+                                    <field name="date" />
+                                    <field name="move_id" />
+                                    <field name="account_id" />
+                                    <field name="partner_id" optional="show" />
+                                    <field name="name" optional="hide" />
+                                    <field name="debit" />
+                                    <field name="credit" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_l10n_pe_voucher_search" model="ir.ui.view">
+        <field name="name">l10n.pe.voucher.search</field>
+        <field name="model">l10n.pe.voucher</field>
+        <field name="arch" type="xml">
+            <search string="Vouchers">
+                <field name="name" />
+                <field name="l10n_pe_origin_model" />
+                <group expand="0">
+                    <filter
+                        name="group_origin_model"
+                        string="Origin Model"
+                        context="{'group_by': 'l10n_pe_origin_model'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_l10n_pe_voucher" model="ir.actions.act_window">
+        <field name="name">Vouchers</field>
+        <field name="res_model">l10n.pe.voucher</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_l10n_pe_voucher_search" />
+    </record>
+</odoo>

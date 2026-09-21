@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- noupdate: el cron se entrega desactivado; activarlo y ajustar su
+     frecuencia es una decision operativa del cliente (cuantos tickets
+     pendientes maneja, cada cuanto SUNAT resuelve una subida masiva). Sin
+     esto, cada actualizacion del modulo reiniciaria silenciosamente esa
+     eleccion. -->
+<odoo noupdate="1">
+    <record id="ir_cron_sire_ticket_poll_pending" model="ir.cron">
+        <field name="name">SIRE: consultar estado de tickets pendientes</field>
+        <field name="model_id" ref="model_sire_ticket" />
+        <field name="state">code</field>
+        <field
+            name="code"
+        >model.search([('state', 'in', ('sent', 'pending'))]).action_poll()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="False" />
+        <field name="nextcall">2026-01-01 00:00:00</field>
+    </record>
+</odoo>

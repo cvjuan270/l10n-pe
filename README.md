@@ -1,0 +1,39 @@
+[![Support the OCA](https://odoo-community.org/readme-banner-image)](https://odoo-community.org/get-involved?utm_source=repo-readme)
+
+# 
+<!-- /!\ Non OCA Context : Set here the badge of your runbot / runboat instance. -->
+[![Pre-commit Status](https://github.com/cvjuan270/l10n-pe/actions/workflows/pre-commit.yml/badge.svg?branch=18.0)](https://github.com/cvjuan270/l10n-pe/actions/workflows/pre-commit.yml?query=branch%3A18.0)
+[![Build Status](https://github.com/cvjuan270/l10n-pe/actions/workflows/test.yml/badge.svg?branch=18.0)](https://github.com/cvjuan270/l10n-pe/actions/workflows/test.yml?query=branch%3A18.0)
+[![codecov](https://codecov.io/gh/cvjuan270/l10n-pe/branch/18.0/graph/badge.svg)](https://codecov.io/gh/cvjuan270/l10n-pe)
+<!-- /!\ Non OCA Context : Set here the badge of your translation instance. -->
+
+<!-- /!\ do not modify above this line -->
+
+Modulas base para Contabilidad Peruana
+
+<!-- /!\ do not modify below this line -->
+
+<!-- prettier-ignore-start -->
+
+[//]: # (addons)
+
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[l10n_pe_analytic_account_target](l10n_pe_analytic_account_target/) | 18.0.1.0.1 |  | permite generar los asientos de destino basados en los apuntes analíticos existentes en un rango de fechas específico. Al confirmar, se procesarán los apuntes analíticos dentro del período seleccionado (fecha de inicio y fecha final) y se aplicarán los porcentajes correspondientes según las normas de reparto establecidas.
+
+[//]: # (end addons)
+
+<!-- prettier-ignore-end -->
+
+## Licenses
+
+This repository is licensed under [AGPL-3.0](LICENSE).
+
+However, each module can have a totally different license, as long as they adhere to Tagre.pe
+policy. Consult each module's `__manifest__.py` file, which contains a `license` key
+that explains its license.
+
+----
+<!-- /!\ Non OCA Context : Set here the full description of your organization. -->

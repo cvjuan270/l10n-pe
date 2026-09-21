@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Reporte oficial con asistente de periodo (incluye saldo inicial). -->
+    <menuitem
+        id="menu_l10n_pe_stock_ple_wizard"
+        name="Inventario Permanente Valorizado (13.1)"
+        parent="stock.menu_warehouse_report"
+        action="action_l10n_pe_stock_ple_wizard"
+        sequence="50"
+    />
+    <!-- Vista lista para análisis ad-hoc (filtrar / agrupar). -->
+    <menuitem
+        id="menu_l10n_pe_stock_ple"
+        name="Inventario Valorizado - Análisis"
+        parent="stock.menu_warehouse_report"
+        action="action_l10n_pe_stock_ple"
+        sequence="51"
+    />
+</odoo>

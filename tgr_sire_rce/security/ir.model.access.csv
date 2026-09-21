@@ -1,0 +1,8 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_sire_rce_periodo_user,sire.rce.periodo.user,model_sire_rce_periodo,account.group_account_user,1,1,1,0
+access_sire_rce_periodo_manager,sire.rce.periodo.manager,model_sire_rce_periodo,account.group_account_manager,1,1,1,1
+access_sire_rce_proposal_line_user,sire.rce.proposal.line.user,model_sire_rce_proposal_line,account.group_account_user,1,0,0,0
+access_sire_rce_proposal_line_manager,sire.rce.proposal.line.manager,model_sire_rce_proposal_line,account.group_account_manager,1,1,1,1
+access_sire_rce_diff_line_user,sire.rce.diff.line.user,model_sire_rce_diff_line,account.group_account_user,1,0,0,0
+access_sire_rce_diff_line_manager,sire.rce.diff.line.manager,model_sire_rce_diff_line,account.group_account_manager,1,1,1,1
+access_sire_rce_replacement_wizard_manager,sire.rce.replacement.wizard.manager,model_sire_rce_replacement_wizard,account.group_account_manager,1,1,1,1
