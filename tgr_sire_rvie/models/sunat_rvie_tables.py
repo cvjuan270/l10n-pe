@@ -11,15 +11,22 @@ Fuente: Manual de servicios Web API SIRE Ventas v25 (05/06/2025), paginas
 """
 
 # -- codTipoResumen (descarga de propuesta/resumenes) -----------------------
-# Confirmado contra el manual v25 (seccion B del plan aprobado).
+# Confirmado contra el manual "Servicios Web Api Ventas v22 Parte II",
+# seccion 5.20 "descargar resumen": el ejemplo de "Evidencias" del propio
+# servicio usa un digito numerico positivo (".../202301/1/0/exporta"), y el
+# servicio hermano 5.21 (mismo campo) es explicito: "El valor enviado debe
+# ser numerico de un caracter (1, 2, 3 o 4)". Un valor previo con signo
+# negativo ("-1".."-7", supuestamente "confirmado contra el manual v25" --
+# PDF que no existe en este repo) causaba el error SUNAT 1056 "Solo se
+# permite dato numerico de 1 digito para el codTipoResumen" (422).
 SIRE_COD_TIPO_RESUMEN = [
-    ("-1", "Propuesta"),
-    ("-2", "Preliminar"),
-    ("-3", "No incluidos / excluidos"),
-    ("-4", "Registro"),
-    ("-5", "Preliminar registrado"),
-    ("-6", "Ajustes posteriores"),
-    ("-7", "No domiciliados"),
+    ("1", "Propuesta"),
+    ("2", "Preliminar"),
+    ("3", "No incluidos / excluidos"),
+    ("4", "Registro"),
+    ("5", "Preliminar registrado"),
+    ("6", "Ajustes posteriores"),
+    ("7", "No domiciliados"),
 ]
 
 # -- codEstado de periodo (servicio "consultar periodos habilitados") -------

@@ -14,7 +14,9 @@ persistir.
 """
 
 import base64
+import io
 import logging
+import zipfile
 from datetime import datetime
 
 from odoo import _, api, fields, models
@@ -70,6 +72,7 @@ class SireRviePeriodo(models.Model):
         required=True,
         default=lambda self: self.env.company,
     )
+    currency_id = fields.Many2one(related="company_id.currency_id")
     periodo_tributario = fields.Char(
         size=6,
         required=True,
@@ -123,6 +126,11 @@ class SireRviePeriodo(models.Model):
         "periodo_id",
         string="Diferencias",
     )
+    diff_count_matched = fields.Integer(
+        string="Coinciden",
+        compute="_compute_diff_counts",
+        store=True,
+    )
     diff_count_missing_odoo = fields.Integer(
         string="Faltan en Odoo",
         compute="_compute_diff_counts",
@@ -143,11 +151,56 @@ class SireRviePeriodo(models.Model):
         compute="_compute_diff_counts",
         store=True,
     )
+    diff_taxed_matched = fields.Monetary(
+        string="Base imponible coincide",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_taxed_missing_sunat = fields.Monetary(
+        string="Base imponible falta en SUNAT",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_taxed_missing_odoo = fields.Monetary(
+        string="Base imponible falta en Odoo",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_igv_matched = fields.Monetary(
+        string="Impuestos coincide",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_igv_missing_sunat = fields.Monetary(
+        string="Impuestos falta en SUNAT",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_igv_missing_odoo = fields.Monetary(
+        string="Impuestos falta en Odoo",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_amount_matched = fields.Monetary(
+        string="Total coincide",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_amount_missing_sunat = fields.Monetary(
+        string="Total falta en SUNAT",
+        compute="_compute_diff_counts",
+        store=True,
+    )
+    diff_amount_missing_odoo = fields.Monetary(
+        string="Total falta en Odoo",
+        compute="_compute_diff_counts",
+        store=True,
+    )
 
     download_summary_cod_tipo = fields.Selection(
         selection=SIRE_COD_TIPO_RESUMEN,
         string="Tipo de resumen a descargar",
-        default="-1",
+        default="1",
     )
     download_summary_cod_tipo_archivo = fields.Selection(
         selection=SIRE_COD_TIPO_ARCHIVO,
@@ -161,20 +214,50 @@ class SireRviePeriodo(models.Model):
         for periodo in self:
             periodo.ticket_count = len(periodo.ticket_ids)
 
-    @api.depends("diff_line_ids.match_status")
+    @api.depends(
+        "diff_line_ids.match_status",
+        "diff_line_ids.amount_odoo",
+        "diff_line_ids.amount_sunat",
+        "diff_line_ids.amount_taxed_odoo",
+        "diff_line_ids.amount_taxed_sunat",
+        "diff_line_ids.amount_igv_odoo",
+        "diff_line_ids.amount_igv_sunat",
+    )
     def _compute_diff_counts(self):
         for periodo in self:
             lines = periodo.diff_line_ids
-            periodo.diff_count_missing_odoo = len(
-                lines.filtered(lambda ln: ln.match_status == "missing_in_odoo")
-            )
-            periodo.diff_count_missing_sunat = len(
-                lines.filtered(lambda ln: ln.match_status == "missing_in_sunat")
-            )
+            matched = lines.filtered(lambda ln: ln.match_status == "matched")
+            missing_sunat = lines.filtered(lambda ln: ln.match_status == "missing_in_sunat")
+            missing_odoo = lines.filtered(lambda ln: ln.match_status == "missing_in_odoo")
+
+            periodo.diff_count_matched = len(matched)
+            periodo.diff_count_missing_odoo = len(missing_odoo)
+            periodo.diff_count_missing_sunat = len(missing_sunat)
             periodo.diff_count_amount_mismatch = len(
                 lines.filtered(lambda ln: ln.match_status == "amount_mismatch")
             )
             periodo.diff_total_count = len(lines)
+
+            # missing_in_sunat solo existe en Odoo (lado SUNAT vacio) y
+            # missing_in_odoo solo existe en SUNAT (lado Odoo vacio) -- se
+            # suma el lado que si tiene monto real en cada caso.
+            periodo.diff_taxed_matched = sum(matched.mapped("amount_taxed_odoo"))
+            periodo.diff_taxed_missing_sunat = sum(
+                missing_sunat.mapped("amount_taxed_odoo")
+            )
+            periodo.diff_taxed_missing_odoo = sum(
+                missing_odoo.mapped("amount_taxed_sunat")
+            )
+            periodo.diff_igv_matched = sum(matched.mapped("amount_igv_odoo"))
+            periodo.diff_igv_missing_sunat = sum(
+                missing_sunat.mapped("amount_igv_odoo")
+            )
+            periodo.diff_igv_missing_odoo = sum(
+                missing_odoo.mapped("amount_igv_sunat")
+            )
+            periodo.diff_amount_matched = sum(matched.mapped("amount_odoo"))
+            periodo.diff_amount_missing_sunat = sum(missing_sunat.mapped("amount_odoo"))
+            periodo.diff_amount_missing_odoo = sum(missing_odoo.mapped("amount_sunat"))
 
     # -- constrains -------------------------------------------------------------
     @api.constrains("periodo_tributario")
@@ -293,15 +376,12 @@ class SireRviePeriodo(models.Model):
         comprobantes) y crea el ``sire.ticket`` correspondiente.
 
         A diferencia del camino "aceptar propuesta"/"registrar preliminar",
-        aqui NO hay un ``local_state`` al que avanzar todavia: falta
-        implementar el parseo del archivo real descargado (formato
-        confirmado -- csv/txt/excel segun Anexo IV -- pero layout de
-        columnas NO documentado en el manual, remite a una Resolucion de
-        Superintendencia externa) antes de poder invocar
-        ``_sire_rvie_map_proposal_item``/``_sire_rvie_cross`` con datos
-        reales. El usuario sigue el flujo ya existente de polling
-        ("Actualizar ticket") y descarga el archivo con
-        ``sire.ticket.action_download_result`` para inspeccionarlo."""
+        aqui NO hay un ``local_state`` al que avanzar todavia: el ticket
+        recien creado esta "Enviado", no "Terminado" -- el parseo del
+        archivo real (ver ``_sire_rvie_parse_proposal_content``) se dispara
+        recien cuando el usuario actualiza el ticket
+        (``action_poll_ticket`` -> ``_sire_rvie_sync_state_from_ticket``) y
+        SUNAT ya lo marco como terminado."""
         self.ensure_one()
         response = self._sire_request(
             "GET",
@@ -322,45 +402,95 @@ class SireRviePeriodo(models.Model):
         self.write({"last_ticket_id": ticket.id})
         return ticket
 
-    def _sire_rvie_map_proposal_item(self, item):
-        """Mapea un item crudo del JSON de propuesta a los ``vals`` de
-        ``sire.rvie.proposal.line``.
+    def _sire_rvie_import_proposal_from_ticket(self, ticket):
+        """Descarga el archivo del ticket "export_proposal_detail" ya
+        terminado, (re)genera ``proposal_line_ids`` y cruza contra el
+        registro de ventas Odoo del periodo (``_sire_rvie_cross``).
 
-        TODO/SUPUESTO: los nombres de campo (``codCar``, ``codTipoCp``, ...)
-        son una inferencia propia (estilo camelCase consistente con el resto
-        de la API SIRE ya confirmada: ``perTributario``, ``codEstado``,
-        ``numTicket``), NO estan verificados contra el manual v25 completo.
-        Ajustar esta funcion (unico punto de parseo) en cuanto se confirme
-        el JSON real.
+        Llamado desde ``_sire_rvie_sync_state_from_ticket`` -- no crea su
+        propio ``ir.attachment`` (a diferencia de
+        ``sire.ticket.action_download_result``, pensado para que el
+        usuario inspeccione el archivo crudo manualmente): aqui solo
+        interesan los bytes para parsear.
         """
         self.ensure_one()
-        item = item or {}
+        content = ticket._sire_ticket_fetch_result_content()
+        proposal_vals = self._sire_rvie_parse_proposal_content(content)
+        self.proposal_line_ids.unlink()
+        if proposal_vals:
+            self.env["sire.rvie.proposal.line"].create(proposal_vals)
+        odoo_rows = self.env["account.move"]._sire_rvie_get_ventas_register(
+            self.company_id, self.periodo_tributario
+        )
+        self._sire_rvie_cross(odoo_rows)
+        if self.local_state in ("draft", "checked"):
+            self.local_state = "compared"
+
+    def _sire_rvie_parse_proposal_content(self, content):
+        """``content``: bytes del ZIP devuelto por el servicio 5.17 para un
+        ticket "export_proposal_detail" -- PROBADO EN VIVO contra un
+        archivo real de SUNAT (Comparar propuesta, periodo 202609): dentro
+        del ZIP hay un unico .txt delimitado por ``|`` con encabezado en la
+        primera linea (columnas: Ruc, Razon Social, Periodo, CAR SUNAT,
+        Fecha de emision, Fecha Vcto/Pago, Tipo CP/Doc., Serie del CDP, Nro
+        CP o Doc. Nro Inicial (Rango), Nro Final (Rango), Tipo Doc
+        Identidad, Nro Doc Identidad, Apellidos Nombres/Razon Social, Valor
+        Facturado Exportacion, BI Gravada, Dscto BI, IGV / IPM, Dscto IGV /
+        IPM, Mto Exonerado, Mto Inafecto, ISC, BI Grav IVAP, IVAP, ICBPER,
+        Otros Tributos, Total CP, Moneda, Tipo Cambio, Fecha Emision Doc
+        Modificado, Tipo CP Modificado, Serie CP Modificado, Nro CP
+        Modificado, ...). NO es JSON (a diferencia de lo que asumia una
+        version anterior de este parseo) ni el formato "Anexo IV" generico
+        de otros servicios SIRE -- es propio de este export.
+        """
+        self.ensure_one()
+        with zipfile.ZipFile(io.BytesIO(content)) as zip_file:
+            inner_name = zip_file.namelist()[0]
+            raw_text = zip_file.read(inner_name).decode("utf-8-sig")
+        body_lines = [line for line in raw_text.splitlines() if line.strip()][1:]
+        return [
+            self._sire_rvie_parse_proposal_line(line.split("|"))
+            for line in body_lines
+        ]
+
+    def _sire_rvie_parse_proposal_line(self, columns):
+        """Mapea una fila (columnas ya separadas por ``|``) del .txt de
+        detalle de propuesta a los ``vals`` de ``sire.rvie.proposal.line``.
+        Indices de columna confirmados contra un archivo real (ver
+        ``_sire_rvie_parse_proposal_content``)."""
+        self.ensure_one()
+
+        def col(index):
+            return (
+                columns[index].strip()
+                if index < len(columns) and columns[index].strip()
+                else False
+            )
+
         return {
             "periodo_id": self.id,
-            "cod_car": item.get("codCar"),
-            "tipo_cp": item.get("codTipoCp"),
-            "serie": item.get("serieCdp"),
-            "numero": item.get("numeroCdp"),
-            "fecha_emision": self._sire_rvie_parse_date(item.get("fecEmision")),
-            "partner_id_type": item.get("codTipoDocIdentidad"),
-            "partner_vat": item.get("numDocIdentidad"),
-            "partner_name": item.get("desRazonSocial"),
-            "amount_export": float(item.get("mtoExportacion") or 0.0),
-            "amount_taxed": float(item.get("mtoBaseGravada") or 0.0),
-            "amount_exempt": float(item.get("mtoExonerado") or 0.0),
-            "amount_unaffected": float(item.get("mtoInafecto") or 0.0),
-            "amount_isc": float(item.get("mtoIsc") or 0.0),
-            "amount_igv": float(item.get("mtoIgv") or 0.0),
-            "amount_other_taxes": float(item.get("mtoOtrosTributos") or 0.0),
-            "amount_total": float(item.get("mtoTotalCp") or 0.0),
-            "currency_code": item.get("codMoneda"),
-            "exchange_rate": float(item.get("tipoCambio") or 0.0) or False,
-            "ref_fecha_emision": self._sire_rvie_parse_date(
-                item.get("fecEmisionDocModificado")
-            ),
-            "ref_tipo_cp": item.get("codTipoCpModificado"),
-            "ref_serie": item.get("serieCpModificado"),
-            "ref_numero": item.get("numeroCpModificado"),
+            "cod_car": col(3),
+            "tipo_cp": col(6),
+            "serie": col(7),
+            "numero": col(8),
+            "fecha_emision": self._sire_rvie_parse_date(col(4)),
+            "partner_id_type": col(10),
+            "partner_vat": col(11),
+            "partner_name": col(12),
+            "amount_export": float(col(13) or 0.0),
+            "amount_taxed": float(col(14) or 0.0),
+            "amount_exempt": float(col(18) or 0.0),
+            "amount_unaffected": float(col(19) or 0.0),
+            "amount_isc": float(col(20) or 0.0),
+            "amount_igv": float(col(16) or 0.0),
+            "amount_other_taxes": float(col(24) or 0.0),
+            "amount_total": float(col(25) or 0.0),
+            "currency_code": col(26),
+            "exchange_rate": float(col(27) or 0.0) or False,
+            "ref_fecha_emision": self._sire_rvie_parse_date(col(28)),
+            "ref_tipo_cp": col(29),
+            "ref_serie": col(30),
+            "ref_numero": col(31),
         }
 
     @staticmethod
@@ -432,6 +562,8 @@ class SireRviePeriodo(models.Model):
                     "numero": odoo_row["numero"],
                     "fecha_emision": odoo_row["fecha_emision"],
                     "partner_name": odoo_row["partner_name"],
+                    "amount_taxed_odoo": odoo_row["amount_taxed"],
+                    "amount_igv_odoo": odoo_row["amount_igv"],
                     "amount_odoo": odoo_row["amount_total"],
                 }
             )
@@ -446,6 +578,8 @@ class SireRviePeriodo(models.Model):
                     or proposal_line.fecha_emision,
                     "partner_name": vals.get("partner_name")
                     or proposal_line.partner_name,
+                    "amount_taxed_sunat": proposal_line.amount_taxed,
+                    "amount_igv_sunat": proposal_line.amount_igv,
                     "amount_sunat": proposal_line.amount_total,
                 }
             )
@@ -453,7 +587,19 @@ class SireRviePeriodo(models.Model):
 
     @staticmethod
     def _sire_rvie_cross_key(tipo_cp, serie, numero):
-        return (tipo_cp or False, serie or False, numero or False)
+        """PROBADO EN VIVO (periodo 202609, comprobante B001-1134): Odoo
+        genera ``numero`` con ceros a la izquierda segun el ancho de la
+        secuencia del diario (``"00001134"``), pero el .txt de propuesta de
+        SUNAT lo entrega sin ellos (``"1134"``) -- sin esta normalizacion
+        NINGUN comprobante cruza (aparecen duplicados como
+        missing_in_odoo + missing_in_sunat aunque el documento exista en
+        ambos lados). Se recorta el cero a la izquierda solo cuando
+        ``numero`` es puramente numerico; un numero con letras (poco
+        usual pero no descartable) se deja tal cual."""
+        numero = numero or False
+        if numero and numero.isdigit():
+            numero = numero.lstrip("0") or "0"
+        return (tipo_cp or False, serie or False, numero)
 
     def action_view_diff_lines(self):
         self.ensure_one()
@@ -521,6 +667,12 @@ class SireRviePeriodo(models.Model):
         self.ensure_one()
         ticket = self.last_ticket_id
         if not ticket or ticket.state != "done":
+            return
+        if ticket.operation_type == "export_proposal_detail":
+            # El cruce se puede refrescar en cualquier momento (no solo
+            # antes de "aceptar propuesta") -- no toca local_state salvo
+            # para avanzarlo desde el arranque (draft/checked -> compared).
+            self._sire_rvie_import_proposal_from_ticket(ticket)
             return
         if self.local_state in ("preliminary_registered", "closed"):
             return

@@ -66,6 +66,7 @@ class SireTicket(models.Model):
     )
     sunat_state_code = fields.Char(string="Código de Estado SUNAT", copy=False)
     sunat_state_label = fields.Char(string="Estado SUNAT", copy=False)
+    cod_proceso = fields.Char(string="Código de Proceso SUNAT", copy=False)
     result_filename = fields.Char(string="Nombre de Archivo", copy=False)
     result_file_type = fields.Char(string="Tipo de Archivo", copy=False)
     result_attachment_id = fields.Many2one(
@@ -97,20 +98,28 @@ class SireTicket(models.Model):
 
     def _sire_ticket_download_url(self):
         """URL de descarga del archivo de resultado de un ticket terminado
-        (servicio 5.17 "descargar archivo", confirmado).
+        (servicio 5.17 "descargar archivo").
 
-        A diferencia de ``_sire_ticket_status_url``, esta URL NO se deriva
-        de esa -- toma ``nomArchivoReporte``/``codTipoArchivoReporte`` del
-        último poll (guardados en ``result_filename``/``result_file_type``)
-        más ``codLibro``.
+        El manual "Servicios Web Api Ventas v22 Parte II" documenta esta
+        URL con ``nomArchivoReporte``/``codTipoArchivoReporte``/``codLibro``
+        -- PROBADO EN VIVO: con esos parametros SUNAT responde 422 con
+        ``{"cod":"2244","msg":"El archivo solicitado no existe."}`` incluso
+        para un ticket recien terminado (0 seg de antiguedad, reintentado
+        varias veces durante 1 minuto). Una integracion previa (funcional en
+        produccion) arma esta misma URL con ``nomArchivoReporte`` +
+        ``perTributario`` + ``codProceso`` (el de la propia respuesta de
+        "consultar estado de ticket", NO el Anexo I de codProceso de TUS) +
+        ``numTicket`` -- PROBADO EN VIVO igual: 200 OK, ``Content-Type:
+        application/zip``, con el detalle real de la propuesta adentro.
         """
         self.ensure_one()
         return (
             f"{SIRE_API_BASE_URL}/v1/contribuyente/migeigv/libros/rvierce/"
             "gestionprocesosmasivos/web/masivo/archivoreporte"
             f"?nomArchivoReporte={self.result_filename or ''}"
-            f"&codTipoArchivoReporte={self.result_file_type or ''}"
-            f"&codLibro={self.cod_libro or ''}"
+            f"&perTributario={self.periodo_tributario or ''}"
+            f"&codProceso={self.cod_proceso or ''}"
+            f"&numTicket={self.sunat_ticket_number or ''}"
         )
 
     def action_poll(self):
@@ -152,6 +161,7 @@ class SireTicket(models.Model):
             vals = {
                 "sunat_state_code": state_code,
                 "sunat_state_label": state_label,
+                "cod_proceso": registro.get("codProceso"),
                 "last_polled_at": fields.Datetime.now(),
             }
             if state_code in SIRE_TICKET_DONE_STATE_CODES:
@@ -173,7 +183,12 @@ class SireTicket(models.Model):
             ticket.write(vals)
         return True
 
-    def action_download_result(self):
+    def _sire_ticket_fetch_result_content(self):
+        """Bytes crudos del archivo de resultado (servicio 5.17), sin crear
+        ningun ``ir.attachment`` -- usado tanto por ``action_download_result``
+        (que si persiste un adjunto, para inspeccion manual) como por
+        consumidores que solo necesitan parsear el contenido (ver
+        ``sire.rvie.periodo._sire_rvie_import_proposal_from_ticket``)."""
         self.ensure_one()
         if self.state != "done":
             raise UserError(
@@ -184,10 +199,15 @@ class SireTicket(models.Model):
             self._sire_ticket_download_url(),
             self.company_id,
         )
+        return response.content
+
+    def action_download_result(self):
+        self.ensure_one()
+        content = self._sire_ticket_fetch_result_content()
         attachment = self.env["ir.attachment"].create(
             {
                 "name": self.result_filename or f"{self.sunat_ticket_number}.zip",
-                "datas": base64.b64encode(response.content),
+                "datas": base64.b64encode(content),
                 "res_model": self._name,
                 "res_id": self.id,
             }

@@ -153,18 +153,98 @@
                             </field>
                         </page>
                         <page string="Diferencias" name="diffs">
+                            <field name="currency_id" invisible="1" />
+                            <div class="o_horizontal_separator">Resumen de diferencias</div>
+                            <group col="3">
+                                <group string="Coincide">
+                                    <field name="diff_count_matched" string="Cantidad" />
+                                    <field
+                                        name="diff_taxed_matched"
+                                        string="Base imponible"
+                                    />
+                                    <field
+                                        name="diff_igv_matched"
+                                        string="Impuestos"
+                                    />
+                                    <field
+                                        name="diff_amount_matched"
+                                        string="Total"
+                                    />
+                                </group>
+                                <group string="Falta en SUNAT">
+                                    <field
+                                        name="diff_count_missing_sunat"
+                                        string="Cantidad"
+                                    />
+                                    <field
+                                        name="diff_taxed_missing_sunat"
+                                        string="Base imponible"
+                                    />
+                                    <field
+                                        name="diff_igv_missing_sunat"
+                                        string="Impuestos"
+                                    />
+                                    <field
+                                        name="diff_amount_missing_sunat"
+                                        string="Total"
+                                    />
+                                </group>
+                                <group string="Falta en Odoo">
+                                    <field
+                                        name="diff_count_missing_odoo"
+                                        string="Cantidad"
+                                    />
+                                    <field
+                                        name="diff_taxed_missing_odoo"
+                                        string="Base imponible"
+                                    />
+                                    <field
+                                        name="diff_igv_missing_odoo"
+                                        string="Impuestos"
+                                    />
+                                    <field
+                                        name="diff_amount_missing_odoo"
+                                        string="Total"
+                                    />
+                                </group>
+                            </group>
                             <field name="diff_line_ids" readonly="1">
                                 <list
                                     decoration-danger="match_status in ('missing_in_odoo', 'missing_in_sunat')"
                                     decoration-warning="match_status == 'amount_mismatch'"
                                     decoration-success="match_status == 'matched'"
                                 >
+                                    <field name="currency_id" column_invisible="1" />
                                     <field name="match_status" widget="badge" />
                                     <field name="tipo_cp" />
                                     <field name="serie" />
                                     <field name="numero" />
                                     <field name="fecha_emision" />
                                     <field name="partner_name" />
+                                    <field
+                                        name="amount_taxed_odoo"
+                                        sum="Base Imponible Odoo"
+                                    />
+                                    <field
+                                        name="amount_taxed_sunat"
+                                        sum="Base Imponible SUNAT"
+                                    />
+                                    <field
+                                        name="amount_taxed_diff"
+                                        sum="Diferencia Base Imponible"
+                                    />
+                                    <field
+                                        name="amount_igv_odoo"
+                                        sum="Impuestos Odoo"
+                                    />
+                                    <field
+                                        name="amount_igv_sunat"
+                                        sum="Impuestos SUNAT"
+                                    />
+                                    <field
+                                        name="amount_igv_diff"
+                                        sum="Diferencia Impuestos"
+                                    />
                                     <field name="amount_odoo" sum="Total Odoo" />
                                     <field name="amount_sunat" sum="Total SUNAT" />
                                     <field name="amount_diff" sum="Diferencia" />

@@ -107,3 +107,13 @@ class TestSireRviePeriodoFlow(SireRvieTestMixin, TransactionCase):
         mocked.assert_called_once()
         self.assertEqual(action["type"], "ir.actions.act_url")
         self.assertFalse(periodo.ticket_ids)
+
+        url = mocked.call_args[0][1]
+        self.assertIn(
+            "/1/0/exporta",
+            url,
+            "codTipoResumen debe enviarse como digito positivo simple "
+            "(manual v22 Parte II, seccion 5.20) -- un valor con signo "
+            "negativo (p.ej. '-1') causa el error SUNAT 1056 (422).",
+        )
+        self.assertNotIn("/-1/0/exporta", url)

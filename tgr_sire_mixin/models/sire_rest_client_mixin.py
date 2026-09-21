@@ -98,9 +98,21 @@ class SireRestClientMixin(models.AbstractModel):
         4xx/5xx de SUNAT se propaga de inmediato como ``SireApiError``, sin
         reintentar (es un error de negocio/validacion, reintentar no lo
         resuelve).
+
+        ``Content-Type``/``Accept: application/json`` van SIEMPRE, aunque
+        ``requests`` no los agregue por defecto en un GET: PROBADO EN VIVO
+        contra el servicio 5.17 "descargar archivo" -- sin ellos, SUNAT
+        responde un 500 crudo de su gateway/Jetty ("Problem accessing ...
+        Request failed.", con una ruta interna que no corresponde a la URL
+        pedida) en vez de procesar la peticion; con los headers, el mismo
+        request devuelve el error de negocio real (422 con ``errors[]``).
         """
         company.ensure_one()
-        request_headers = {"Authorization": f"Bearer {company._sire_get_valid_token()}"}
+        request_headers = {
+            "Authorization": f"Bearer {company._sire_get_valid_token()}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         if headers:
             request_headers.update(headers)
 
@@ -149,6 +161,7 @@ class SireRestClientMixin(models.AbstractModel):
     def _sire_build_error(self, response):
         error_code = None
         error_description = response.text
+        sub_errors = []
         try:
             data = response.json()
         except ValueError:
@@ -156,9 +169,22 @@ class SireRestClientMixin(models.AbstractModel):
         if isinstance(data, dict):
             error_code = data.get("cod")
             error_description = data.get("msg") or error_description
+            sub_errors = [
+                item
+                for item in data.get("errors") or []
+                if isinstance(item, dict)
+            ]
         message = sire_lookup_error_message(error_code, error_description)
+        if sub_errors:
+            detail = "; ".join(
+                f"{item.get('cod')}: {item.get('msg')}" for item in sub_errors
+            )
+            message = f"{message} ({detail})"
         _logger.error(
-            "SIRE error %s: %s", error_code or response.status_code, error_description
+            "SIRE error %s: %s%s",
+            error_code or response.status_code,
+            error_description,
+            f" -- errors: {sub_errors}" if sub_errors else "",
         )
         return SireApiError(
             _("SUNAT devolvió un error (%(code)s): %(message)s")

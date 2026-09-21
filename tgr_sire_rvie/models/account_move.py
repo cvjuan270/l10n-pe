@@ -32,26 +32,37 @@ class AccountMove(models.Model):
 
     # -- parseo de serie/numero ----------------------------------------------
     def _sire_rvie_parse_document_number(self):
-        """(serie, numero) de ``self.name``, mismo criterio que la nota (F)
-        del SQL de referencia: se toma el texto tras el ultimo espacio (para
-        quitar el prefijo de tipo de documento que antepone
-        ``l10n_latam_invoice_document``, p.ej. "F E001-1" -> "E001-1") y se
-        separa por el primer "-": lo anterior es la serie, lo posterior el
-        numero.
+        """(serie, numero) de ``self.name``.
 
-        Deliberadamente MAS robusto que el SQL original (que usaba
-        ``split_part(doc, '-', 2)``, que descarta cualquier fragmento despues
-        de un segundo "-"): aqui se hace un unico split con maxsplit=1, asi
-        que un numero que a su vez contuviera un "-" no se trunca.
+        ``self.name`` es ``"{prefijo del tipo de documento} {serie}-{numero}"``
+        (``l10n_latam_invoice_document`` antepone el prefijo con un espacio,
+        p.ej. ``"F FFI-00000122"``): el indice 0 de separar por el primer
+        "-" es ``"{prefijo} {serie}"`` junto -- se le quitan los espacios y
+        se toman los ultimos 4 caracteres para obtener la serie real de 4
+        caracteres que SUNAT tiene registrada (``"FFFI"``, no ``"FFI"``).
+
+        PROBADO EN VIVO: el criterio anterior (tomar el texto tras el
+        ultimo espacio y descartar el prefijo en vez de concatenarlo)
+        generaba ``"FFI"`` para un comprobante cuyo XML UBL enviado a SUNAT
+        usa ``"FFFI"`` -- todo el cruce contra la propuesta fallaba para
+        esa serie. Con series de 4 caracteres sin prefijo separado (p.ej.
+        ``"B001-00001134"``, boletas) el resultado no cambia: no hay
+        espacio que quitar y ya son 4 caracteres.
+
+        Deliberadamente MAS robusto que el SQL de referencia original (que
+        usaba ``split_part(doc, '-', 2)``, que descarta cualquier fragmento
+        despues de un segundo "-"): aqui se hace un unico split con
+        maxsplit=1, asi que un numero que a su vez contuviera un "-" no se
+        trunca.
         """
         self.ensure_one()
         name = (self.name or "").strip()
         if not name:
             return False, False
-        doc = name.rsplit(None, 1)[-1] if " " in name else name
-        if "-" not in doc:
-            return False, doc
-        serie, numero = doc.split("-", 1)
+        if "-" not in name:
+            return False, name
+        serie_part, numero = name.split("-", 1)
+        serie = serie_part.replace(" ", "")[-4:]
         return serie or False, numero or False
 
     # -- clasificacion de montos ----------------------------------------------
@@ -166,14 +177,17 @@ class AccountMove(models.Model):
         (``AAAAMM``) de ``company``, una fila (dict) por comprobante.
 
         Filtro: ``state = 'posted'``, ``move_type in ('out_invoice',
-        'out_refund')``, ``invoice_date`` dentro del periodo. A diferencia
-        del ``.sql`` de referencia (nota E, que excluia los diarios con
-        ``l10n_latam_use_documents = False``), este metodo NO filtra por ese
-        flag: SUNAT nunca recibe esos comprobantes (no llevan tipo de
-        documento), pero deben seguir apareciendo en el registro Odoo -- el
-        cruce contra la propuesta los muestra como "en Odoo pero sin tipo de
-        documento" (``missing_in_sunat``), informacion util para corregir el
-        diario, no un dato a esconder silenciosamente.
+        'out_refund')``, ``invoice_date`` dentro del periodo, y
+        ``l10n_pe_edi_is_required`` (si el campo existe -- ver mas abajo).
+        Un comprobante que no requiere envio electronico nunca puede
+        aparecer en la propuesta de SUNAT, asi que compararlo solo genera
+        ruido ``missing_in_sunat`` indistinguible de una discrepancia real.
+
+        ``l10n_pe_edi_is_required`` es un campo de un modulo externo
+        (``l10n_pe_edi``) que NO es dependencia de ``tgr_sire_rvie`` -- se
+        lee con ``getattr``/default ``True`` para no romper instalaciones
+        sin ese modulo (mismo comportamiento que antes: sin el campo, no se
+        filtra nada).
         """
         date_from, date_to = self._sire_rvie_period_bounds(periodo_tributario)
         moves = self.search(
@@ -184,6 +198,9 @@ class AccountMove(models.Model):
                 ("invoice_date", ">=", date_from),
                 ("invoice_date", "<=", date_to),
             ]
+        )
+        moves = moves.filtered(
+            lambda move: getattr(move, "l10n_pe_edi_is_required", True)
         )
         return [move._sire_rvie_build_register_row() for move in moves]
 

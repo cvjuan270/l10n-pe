@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils: https://docutils.sourceforge.io/" />
+<title>SIRE Registro de Ventas (RVIE)</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 9511 2024-01-13 09:50:07Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+*/
+
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: gray; }
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em ;
+  border: 1px solid #999 ;
+  border-collapse: collapse }
+
+table.docutils td, table.docutils th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top ;
+  border: 1px solid #999 }
+
+table.docutils th.field-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="sire-registro-de-ventas-rvie">
+
+<h1 class="title">SIRE Registro de Ventas (RVIE)</h1>
+
+<p>Integra el Registro de Ventas e Ingresos Electrónico (RVIE) del SIRE de SUNAT
+sobre <code>tgr_sire_mixin</code> (cliente REST/TUS y <code>sire.ticket</code>).
+Menú: <strong>SIRE &gt; Registro de Ventas (RVIE)</strong>.</p>
+
+<p><strong>Tabla de contenidos</strong></p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#que-provee" id="toc-entry-1">Qué provee</a></li>
+<li><a class="reference internal" href="#proceso-del-contador" id="toc-entry-2">Proceso del contador</a></li>
+<li><a class="reference internal" href="#maquina-de-estados" id="toc-entry-3">Máquina de estados (local_state)</a></li>
+<li><a class="reference internal" href="#limitaciones-conocidas" id="toc-entry-4">Limitaciones conocidas</a></li>
+</ul>
+</div>
+
+<div class="section" id="que-provee">
+<h2><a class="toc-backref" href="#toc-entry-1">Qué provee</a></h2>
+<ul class="simple">
+<li><code>sire.rvie.periodo</code>: un registro por periodo tributario (<code>AAAAMM</code>),
+con su propia máquina de estados local (ver más abajo) que espeja el flujo real de
+SUNAT.</li>
+<li><strong>Consultar periodo</strong> (<code>action_check_period</code>): consulta los
+periodos habilitados (servicio 5.2) y actualiza el espejo textual del estado SUNAT.</li>
+<li><strong>Comparar propuesta</strong> (<code>action_compare_proposal</code>): dispara el
+servicio asíncrono 5.18 "descargar propuesta" -- crea un <code>sire.ticket</code>
+(<code>operation_type="export_proposal_detail"</code>). Al actualizar ese ticket
+(<strong>Actualizar ticket</strong>, <code>action_poll_ticket</code>) y que SUNAT lo
+marque terminado, se descarga el archivo real (servicio 5.17; layout de columnas
+confirmado en vivo, no es JSON ni el "Anexo IV" genérico), se puebla
+<code>proposal_line_ids</code> y se cruza automáticamente contra el registro de ventas
+generado desde <code>account.move</code> (<code>_sire_rvie_cross</code>), avanzando
+<code>local_state</code> a <code>compared</code>.</li>
+<li>Cruce Odoo vs. SUNAT: clave de negocio <code>(tipo CP, serie, número)</code>. La serie
+se obtiene concatenando el prefijo del tipo de documento con el código de la secuencia
+(<code>l10n_latam_invoice_document</code> los separa con un espacio) y tomando los
+últimos 4 caracteres; el número se normaliza quitando ceros a la izquierda antes de
+comparar. Solo se comparan comprobantes con <code>l10n_pe_edi_is_required = True</code>
+cuando ese campo existe (módulo externo <code>l10n_pe_edi</code>, no es dependencia de
+este módulo).</li>
+<li>Pestaña <strong>Diferencias</strong>: resumen por cantidad, base imponible, impuestos
+y total, desglosado en tres bloques (<code>Coincide</code> / <code>Falta en SUNAT</code>
+/ <code>Falta en Odoo</code>), más el detalle línea por línea.</li>
+<li><strong>Camino A -- Aceptar propuesta</strong> (<code>action_accept_proposal</code>):
+acepta la propuesta SUNAT tal cual, vía ticket asíncrono.</li>
+<li><strong>Camino B -- Reemplazar propuesta</strong> (wizard + subida TUS): sube un
+<code>.zip</code> armado manualmente cuando hay diferencias que corregir.</li>
+<li><strong>Registrar preliminar</strong> (<code>action_register_preliminary</code>):
+presenta oficialmente el periodo ante SUNAT. Solo alcanzable desde
+<code>proposal_accepted</code>/<code>replacement_uploaded</code>; bloqueado con los
+mensajes 2293/2294/2295 del manual si el estado no corresponde.</li>
+<li><strong>Excluir comprobante</strong> (wizard, irreversible) y <strong>descargar
+resumen</strong> (<code>action_download_summary</code>, servicio 5.20, síncrono, sin
+ticket).</li>
+</ul>
+</div>
+
+<div class="section" id="proceso-del-contador">
+<h2><a class="toc-backref" href="#toc-entry-2">Proceso del contador</a></h2>
+<p>Secuencia regular para declarar un periodo tributario con este módulo:</p>
+<ol class="arabic simple">
+<li>Crear (o abrir) el registro del periodo <code>AAAAMM</code> en
+<strong>SIRE &gt; Registro de Ventas (RVIE)</strong>.</li>
+<li><strong>Consultar periodo</strong>: trae el estado oficial de SUNAT
+(<code>sunat_periodo_state_label</code>: "Presentado" / "No Presentado") y pasa
+<code>local_state</code> de <code>draft</code> a <code>checked</code>.</li>
+<li>Verificar que todos los comprobantes de venta del periodo ya se transmitieron
+electrónicamente a SUNAT antes de comparar. Un comprobante contabilizado pero aún
+"por enviar" (<code>edi_state = to_send</code>) aparece como diferencia real
+("Falta en SUNAT") hasta que se envíe -- es el comportamiento esperado, no un error
+de la comparación.</li>
+<li><strong>Comparar propuesta</strong>: crea el ticket de descarga de la propuesta
+SUNAT.</li>
+<li><strong>Actualizar ticket</strong> (una o más veces, hasta <code>state = done</code>):
+al terminar, descarga y parsea el archivo real, puebla <code>proposal_line_ids</code>,
+cruza contra Odoo y llena la pestaña Diferencias. <code>local_state</code> pasa a
+<code>compared</code>.</li>
+<li>Revisar la pestaña <strong>Diferencias</strong>:
+<ul>
+<li><code>Coincide</code>: sin acción.</li>
+<li><code>Falta en SUNAT</code>: comprobante en Odoo sin contraparte en la propuesta
+SUNAT -- verificar envío electrónico pendiente, rechazo, o registro faltante.</li>
+<li><code>Falta en Odoo</code>: comprobante en la propuesta SUNAT sin contraparte en
+Odoo -- verificar comprobantes emitidos fuera de Odoo o pendientes de contabilizar.</li>
+</ul>
+</li>
+<li>Según el resultado de la revisión:
+<ul>
+<li>Propuesta correcta: <strong>Aceptar propuesta</strong> (camino A) -- crea ticket
+asíncrono; actualizar hasta <code>state = done</code>. <code>local_state</code> pasa a
+<code>proposal_accepted</code>.</li>
+<li>Propuesta con diferencias a corregir: <strong>Reemplazar propuesta</strong>
+(camino B) -- sube el <code>.zip</code> de reemplazo vía el wizard; actualizar el
+ticket hasta <code>state = done</code>. <code>local_state</code> pasa a
+<code>replacement_uploaded</code>.</li>
+</ul>
+</li>
+<li><strong>Registrar preliminar</strong>: solo habilitado desde
+<code>proposal_accepted</code>/<code>replacement_uploaded</code>. Presenta el registro
+de ventas del periodo ante SUNAT. <code>local_state</code> pasa a
+<code>preliminary_registered</code>.</li>
+</ol>
+<p>Acciones auxiliares, disponibles en cualquier punto del flujo:</p>
+<ul class="simple">
+<li><strong>Excluir comprobante</strong>: retira definitivamente un comprobante del
+registro (irreversible en SUNAT; requiere el grupo de gestor contable).</li>
+<li><strong>Descargar resumen</strong>: descarga reportes de resumen (propuesta,
+preliminar, registro, etc.) para archivo o respaldo.</li>
+</ul>
+</div>
+
+<div class="section" id="maquina-de-estados">
+<h2><a class="toc-backref" href="#toc-entry-3">Máquina de estados (local_state)</a></h2>
+<pre class="literal-block">
+draft -&gt; checked -&gt; compared -+-&gt; proposal_accepted    -+-&gt; preliminary_registered
+                               +-&gt; replacement_uploaded -+
+</pre>
+<p><code>error</code> es un estado terminal alcanzable desde cualquier punto ante una
+falla de comunicación o de negocio no atrapada por los guards locales.</p>
+</div>
+
+<div class="section" id="limitaciones-conocidas">
+<h2><a class="toc-backref" href="#toc-entry-4">Limitaciones conocidas</a></h2>
+<ul class="simple">
+<li>Los servicios usados se confirmaron contra el manual "Servicios Web Api Ventas v22"
+(Partes I y II, en el <code>docs/</code> del repo raíz). La versión vigente de SUNAT es
+v25 (ventas) / v26 (compras) -- podría haber diferencias no confirmadas.</li>
+<li>El servicio 5.20 "descargar resumen" tiene la URL corregida contra el manual pero
+no se validó en vivo contra todos sus tipos de archivo (excel/csv).</li>
+<li>Camino B: el wizard no genera el archivo oficial de reemplazo (37+ campos del
+Anexo 3) -- solo sube el que el usuario adjunta a mano.</li>
+<li>El cruce depende de que <code>account.move.name</code> siga el formato
+<code>"{prefijo} {serie}-{numero}"</code>; un formato de secuencia distinto puede
+requerir ajustar <code>_sire_rvie_parse_document_number</code>.</li>
+</ul>
+</div>
+
+</div>
+</body>
+</html>

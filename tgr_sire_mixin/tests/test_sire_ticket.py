@@ -37,7 +37,9 @@ class TestSireTicket(SireMixinTestMixin, TransactionCase):
         return self.env["sire.ticket"].create(vals)
 
     @staticmethod
-    def _tickets_payload(numero_ticket, detalle_ticket, archivo_reporte=None):
+    def _tickets_payload(
+        numero_ticket, detalle_ticket, archivo_reporte=None, cod_proceso=None
+    ):
         # ``archivoReporte`` es hermano de ``detalleTicket`` dentro de
         # ``registro`` -- confirmado contra un ticket real de SUNAT, NO
         # esta anidado dentro de ``detalleTicket`` (a pesar de como lo
@@ -45,6 +47,8 @@ class TestSireTicket(SireMixinTestMixin, TransactionCase):
         registro = {"numTicket": numero_ticket, "detalleTicket": detalle_ticket}
         if archivo_reporte is not None:
             registro["archivoReporte"] = archivo_reporte
+        if cod_proceso is not None:
+            registro["codProceso"] = cod_proceso
         return {"registros": [registro]}
 
     def test_poll_pending(self):
@@ -69,12 +73,19 @@ class TestSireTicket(SireMixinTestMixin, TransactionCase):
             ticket.sunat_ticket_number,
             detalle,
             archivo_reporte,
+            cod_proceso="10",
         )
         with patch(MOCK_PATH, return_value=sire_mock_response(200, payload)):
             ticket.action_poll()
         self.assertEqual(ticket.state, "done")
         self.assertEqual(ticket.result_filename, "resultado.zip")
         self.assertEqual(ticket.result_file_type, "00")
+        self.assertEqual(
+            ticket.cod_proceso,
+            "10",
+            "necesario para armar la URL de descarga (ver "
+            "_sire_ticket_download_url)",
+        )
 
     def test_poll_error_state(self):
         ticket = self._create_ticket(state="pending")
@@ -121,3 +132,27 @@ class TestSireTicket(SireMixinTestMixin, TransactionCase):
         self.assertTrue(ticket.result_attachment_id)
         self.assertEqual(ticket.result_attachment_id.name, "resultado.zip")
         self.assertEqual(action["type"], "ir.actions.act_url")
+
+    def test_download_result_url_uses_pertributario_codproceso_numticket(self):
+        """PROBADO EN VIVO: los parametros documentados por el manual v22
+        (``codTipoArchivoReporte``/``codLibro``) devuelven un 422 falso
+        "El archivo solicitado no existe" (2244) incluso para un ticket
+        recien terminado. Una integracion previa que si funcionaba en
+        produccion arma esta misma URL con ``perTributario``/``codProceso``/
+        ``numTicket`` -- confirmado igual en vivo (200 OK, ZIP real)."""
+        ticket = self._create_ticket(
+            state="done",
+            result_filename="resultado.zip",
+            cod_proceso="10",
+        )
+        with patch(
+            MOCK_PATH, return_value=sire_mock_response(200, content=b"zip-bytes")
+        ) as mocked:
+            ticket.action_download_result()
+        url = mocked.call_args[0][1]
+        self.assertIn("nomArchivoReporte=resultado.zip", url)
+        self.assertIn(f"perTributario={ticket.periodo_tributario}", url)
+        self.assertIn("codProceso=10", url)
+        self.assertIn(f"numTicket={ticket.sunat_ticket_number}", url)
+        self.assertNotIn("codTipoArchivoReporte", url)
+        self.assertNotIn("codLibro", url)
