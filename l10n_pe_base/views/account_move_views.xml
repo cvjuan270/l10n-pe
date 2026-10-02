@@ -1,0 +1,15 @@
+<odoo>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">account.move.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"></field>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='accounting_info_group']" position="inside">
+                <field name="l10n_pe_period_id" readonly="1"></field>
+            </xpath>
+            <xpath expr="//page[@id='other_tab_entry']/group/group[2]" position="inside">
+                <field attrs="{'readonly': [('state','!=','draft')]}" name="l10n_pe_period_id" options="{'no_create':True}"></field>
+            </xpath>
+        </field>
+    </record>
+</odoo>

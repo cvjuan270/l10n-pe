@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+l10n_pe_bill_sequence.access_account_move_renumber_wizard,access_account_move_renumber_wizard,l10n_pe_bill_sequence.model_account_move_renumber_wizard,base.group_user,1,1,1,1

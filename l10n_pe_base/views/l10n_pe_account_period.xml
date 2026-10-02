@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- <record id="l10n_pe_account_period_search_view" model="ir.ui.view"> -->
+    <!--     <field name="name">l10n_pe.account.period.search</field> -->
+    <!--     <field name="model">l10n_pe.account.period</field> -->
+    <!--     <field name="arch" type="xml"> -->
+    <!--         <search> -->
+    <!--             <group expand="0" string="Agrupar por..."> -->
+    <!--                 <filter name="company_id" string="Compañía" /> -->
+    <!--             </group> -->
+    <!--         </search> -->
+    <!--     </field> -->
+    <!-- </record> -->
+    <record id="view_l10n_pe_account_period_form" model="ir.ui.view">
+        <field name="name">l10n_pe.account.period.form</field>
+        <field name="model">l10n_pe.account.period</field>
+        <field name="arch" type="xml">
+            <form string="Account Period">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code" required="1"></field>
+                            <field name="name" required="1"></field>
+                            <field name="fiscal_year_id" required="1"></field>
+                            <field name="company_id" readonly="1"></field>
+                            <!--							<field name="is_opening_close"/>-->
+                        </group>
+                        <group>
+                            <field name="date_start"></field>
+                            <field name="date_end"></field>
+                            <field name="close"></field>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_l10n_pe_account_period_list" model="ir.ui.view">
+        <field name="name">account.period.list</field>
+        <field name="model">l10n_pe.account.period</field>
+        <field name="arch" type="xml">
+            <tree create="0" delete="0">
+                <field name="code" optional="show"></field>
+                <field name="name" optional="show"></field>
+                <field name="fiscal_year_id" optional="show"></field>
+                <field name="company_id" optional="show"></field>
+                <field name="date_start" optional="show"></field>
+                <field name="date_end" optional="show"></field>
+                <field name="close" optional="show"></field>
+                <!--				<field name="is_opening_close" optional="show"/>-->
+            </tree>
+        </field>
+    </record>
+    <record id="action_l10n_pe_account_period_form" model="ir.actions.act_window">
+        <field name="name">Periodo</field>
+        <field name="res_model">l10n_pe.account.period</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_l10n_pe_account_period_list"></field>
+        <!-- <field name="domain">[('company_id', 'in', allowed_company_ids)]</field> -->
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face"></p>
+        </field>
+    </record>
+</odoo>
