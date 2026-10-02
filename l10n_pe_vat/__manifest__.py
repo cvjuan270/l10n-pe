@@ -7,7 +7,7 @@
                "(RENIEC/SUNAT) y completa automáticamente nombre, dirección, "
                "distrito, ciudad y departamento.",
     "version": "16.0.1.0.0",
-    "category": "Localization/Peru",
+    "category": "Accounting/Localizations",
     "license": "LGPL-3",
     "author": "tagre.pe, Juan Collado",
     "website": "https://tagre.pe",
