@@ -6,7 +6,7 @@ import re
 
 import requests
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -16,6 +16,35 @@ API_TIMEOUT = 10
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+
+    @api.model
+    def _l10n_pe_vat_parse_token(self, token):
+        """Split the stored token from its optional service plan marker."""
+        match = re.fullmatch(r"(.+?)\s*\|\s*(\d+)", token)
+        if match:
+            return match.group(1).strip(), int(match.group(2))
+        return token, None
+
+    @api.model
+    def _l10n_pe_vat_register_query(self, cap):
+        """Count one outgoing query against the current month allowance.
+
+        :param cap: maximum queries allowed per month, or None for no cap.
+        :return: True if the query is allowed, False otherwise.
+        """
+        if not cap:
+            return True
+        icp = self.env["ir.config_parameter"].sudo()
+        month = fields.Date.context_today(self).strftime("%Y-%m")
+        if icp.get_param("l10n_pe_vat.query_month") != month:
+            icp.set_param("l10n_pe_vat.query_month", month)
+            count = 0
+        else:
+            count = int(icp.get_param("l10n_pe_vat.query_count", "0") or 0)
+        if count >= cap:
+            return False
+        icp.set_param("l10n_pe_vat.query_count", str(count + 1))
+        return True
 
     @api.model
     def l10n_pe_vat_consult(self, vat_number, identification_type_id):
@@ -50,6 +79,12 @@ class ResPartner(models.Model):
             return {"error": _("The DNI must have 8 digits.")}
         if endpoint == "ruc" and not re.fullmatch(r"\d{11}", number):
             return {"error": _("The RUC must have 11 digits.")}
+
+        token, cap = self._l10n_pe_vat_parse_token(token)
+        if not self._l10n_pe_vat_register_query(cap):
+            return {"error": _(
+                "The monthly limit of %s queries has been reached. "
+                "Try again next month.") % cap}
 
         try:
             response = requests.get(

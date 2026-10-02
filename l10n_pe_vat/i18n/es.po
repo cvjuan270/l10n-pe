@@ -69,6 +69,15 @@ msgstr "El RUC debe tener 11 dígitos."
 #. module: l10n_pe_vat
 #: code:addons/l10n_pe_vat/models/res_partner.py:0
 #, python-format
+msgid ""
+"The monthly limit of %s queries has been reached. Try again next month."
+msgstr ""
+"Se alcanzó el límite mensual de %s consultas. Intente nuevamente el próximo "
+"mes."
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
 msgid "The lookup is only available for DNI or RUC identification types."
 msgstr ""
 "La consulta solo está disponible para los tipos de identificación DNI o RUC."
