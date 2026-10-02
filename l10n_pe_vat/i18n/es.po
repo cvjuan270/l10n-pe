@@ -1,0 +1,94 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_pe_vat
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-01 00:00+0000\n"
+"PO-Revision-Date: 2026-10-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+
+#. module: l10n_pe_vat
+#: model:ir.model.fields,field_description:l10n_pe_vat.field_res_config_settings__l10n_pe_vat_api_token
+msgid "APIs Peru Token"
+msgstr "Token de APIs Perú"
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid ""
+"Could not reach the APIs Peru service. Check your internet connection and "
+"try again."
+msgstr ""
+"No se pudo contactar el servicio de APIs Perú. Verifique su conexión a "
+"internet e intente nuevamente."
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid "Document not found."
+msgstr "Documento no encontrado."
+
+#. module: l10n_pe_vat
+#. openerp-web
+#: code:addons/l10n_pe_vat/static/src/components/vat_consult_field/vat_consult_field.xml:0
+#, python-format
+msgid "Look up on RENIEC/SUNAT"
+msgstr "Consultar en RENIEC/SUNAT"
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid ""
+"The APIs Peru token is not set. Configure it in Settings > General Settings "
+"> Contacts."
+msgstr ""
+"El token de APIs Perú no está configurado. Configúrelo en Ajustes > Ajustes "
+"generales > Contactos."
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid "The DNI must have 8 digits."
+msgstr "El DNI debe tener 8 dígitos."
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid "The RUC must have 11 digits."
+msgstr "El RUC debe tener 11 dígitos."
+
+#. module: l10n_pe_vat
+#: code:addons/l10n_pe_vat/models/res_partner.py:0
+#, python-format
+msgid "The lookup is only available for DNI or RUC identification types."
+msgstr ""
+"La consulta solo está disponible para los tipos de identificación DNI o RUC."
+
+#. module: l10n_pe_vat
+#: model:ir.model.fields,help:l10n_pe_vat.field_res_config_settings__l10n_pe_vat_api_token
+msgid ""
+"Token for https://apisperu.com used to query DNI (RENIEC) and RUC (SUNAT)."
+msgstr ""
+"Token de https://apisperu.com usado para consultar DNI (RENIEC) y RUC "
+"(SUNAT)."
+
+#. module: l10n_pe_vat
+#: model_terms:ir.ui.view,arch_db:l10n_pe_vat.l10n_pe_vat_res_config_settings_view_form
+msgid "Token used to query DNI (RENIEC) and RUC (SUNAT) on apisperu.com"
+msgstr "Token usado para consultar DNI (RENIEC) y RUC (SUNAT) en apisperu.com"
+
+#. module: l10n_pe_vat
+#. openerp-web
+#: code:addons/l10n_pe_vat/static/src/components/vat_consult_field/vat_consult_field.js:0
+#, python-format
+msgid "VAT with DNI/RUC lookup"
+msgstr "NIF con consulta DNI/RUC"

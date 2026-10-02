@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 tagre.pe
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+
+    <record id="l10n_pe_vat_res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.l10n.pe.vat</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <div name="contacts_setting_container" position="inside">
+                <div class="col-12 col-lg-6 o_setting_box" id="l10n_pe_vat_token_setting">
+                    <div class="o_setting_right_pane" id="l10n_pe_vat_token_settings">
+                        <span class="o_form_label">APIs Peru Token</span>
+                        <div class="text-muted">
+                            Token used to query DNI (RENIEC) and RUC (SUNAT) on apisperu.com
+                        </div>
+                        <div class="content-group mt16">
+                            <field name="l10n_pe_vat_api_token" password="True" class="w-75"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </field>
+    </record>
+
+</odoo>

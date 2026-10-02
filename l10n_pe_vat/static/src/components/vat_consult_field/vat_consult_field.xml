@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 tagre.pe
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<templates xml:space="preserve">
+
+    <t t-name="l10n_pe_vat.VatConsultCharField" t-inherit="web.CharField" owl="1">
+        <xpath expr="//input" position="after">
+            <button type="button"
+                    class="btn btn-link o_l10n_pe_vat_consult_btn"
+                    t-att-disabled="!canConsult or consultState.loading"
+                    title="Look up on RENIEC/SUNAT"
+                    t-on-click.prevent="onConsultClick">
+                <i t-att-class="consultState.loading ? 'fa fa-spinner fa-spin' : 'fa fa-search'"/>
+            </button>
+        </xpath>
+    </t>
+
+</templates>
