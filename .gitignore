@@ -55,6 +55,8 @@ cover/
 # Translations
 *.mo
 *.pot
+# Odoo module .pot files ARE versioned
+!*/i18n/*.pot
 
 # Django stuff:
 *.log
@@ -218,3 +220,41 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ========================================
+# Talentixs workspace setup: entradas agregadas
+# ========================================
+*.py[cod]
+.venv/
+.env/
+*.pyc
+*.pyo
+.idea/
+.vscode/
+.project
+.pydevproject
+.settings/
+.odoo-data/
+backups/
+data/filestore/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+logs/
+*.local
+*.secret
+.env.local
+odoo.conf.local
+# ========================================
+# Claude Code / IA Assistant (NO commitear)
+# ========================================
+.claude/
+.claude.json
+.claude.json.backup
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+.mcp-pending.md
+.talentixs-setup-state
+.clients.json
